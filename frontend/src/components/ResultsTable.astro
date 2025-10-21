@@ -1,0 +1,41 @@
+---
+import type { CalculationResult } from '../types/dhondt';
+
+interface Props {
+  result: CalculationResult;
+}
+
+const { result } = Astro.props;
+---
+
+<div class="results-section">
+  <h2>Resultados</h2>
+  <table class="results-table">
+    <thead>
+      <tr>
+        <th>Nombre de la Lista</th>
+        <th>Votos</th>
+        <th>Escaños Asignados</th>
+        <th>Porcentaje</th>
+      </tr>
+    </thead>
+    <tbody>
+      {result.results.map((item) => (
+        <tr>
+          <td>{item.name}</td>
+          <td>{item.votes.toLocaleString('es-ES')}</td>
+          <td><strong>{item.seats}</strong></td>
+          <td>{((item.votes / result.total_votes) * 100).toFixed(2)}%</td>
+        </tr>
+      ))}
+    </tbody>
+    <tfoot>
+      <tr style="font-weight: bold; background: #f8f9fa;">
+        <td>Total</td>
+        <td>{result.total_votes.toLocaleString('es-ES')}</td>
+        <td>{result.total_seats}</td>
+        <td>100%</td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
