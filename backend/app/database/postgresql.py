@@ -12,49 +12,10 @@ from app.models.calculation_model import Calculation
 from app.models.party_model import Party
 from app.models.calculation_result_model import CalculationResult
 from app.models.voting_submission_model import VotingSubmission
-from app.database.session import (get_engine,
-                                 get_session_factory,
-                                 dispose_engine,
-                                 test_connection as test_db_connection,
-                                 init_db)
+from app.database.session import get_session_factory
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
-
-
-# Backward compatibility: expose session functions with old names
-def init_connection_pool() -> bool:
-    """
-    Initialize database connection (SQLAlchemy engine).
-    """
-    try:
-        get_engine()
-        return True
-    except Exception as e:
-        logger.error(f"Failed to initialize database connection: {e}", exc_info=True)
-        return False
-
-
-def get_connection_pool():
-    """
-    Get database engine (backward compatibility with old psycopg2 code).
-    """
-    try:
-        return get_engine()
-    except Exception:
-        return None
-
-
-def close_connection_pool():
-    """Close all database connections."""
-    dispose_engine()
-
-
-def test_connection() -> bool:
-    """
-    Test database connection.
-    """
-    return test_db_connection()
 
 
 def insert_calculation(total_seats: int, total_votes: int, results: List[Dict[str, Any]]) -> int:
