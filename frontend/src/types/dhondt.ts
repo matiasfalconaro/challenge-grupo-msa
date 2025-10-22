@@ -40,11 +40,6 @@ export interface AggregatedVotesResponse {
   total_votes: number;
 }
 
-export interface CalculateAggregateRequest {
-  total_seats: number;
-  save_result: boolean;
-}
-
 export interface ClearSubmissionsResponse {
   message: string;
   deleted_count: number;

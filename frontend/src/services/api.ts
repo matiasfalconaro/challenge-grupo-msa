@@ -2,7 +2,6 @@ import type {
   CalculationResult,
   ListInput,
   VotingSubmissionResponse,
-  VotingSubmissionItem,
   AggregatedVotesResponse,
   ClearSubmissionsResponse
 } from '../types/dhondt';
@@ -25,17 +24,6 @@ const BACKEND_URL = getBackendUrl();
 
 export class DhondtApiService {
 
-  // Check API health status.
-  static async healthCheck(): Promise<{ status: string; service: string }> {
-    const response = await fetch(`${BACKEND_URL}/health`);
-
-    if (!response.ok) {
-      throw new Error('Health check failed');
-    }
-
-    return await response.json();
-  }
-
   // AGGREGATE VOTING API METHODS
 
   //Submit voting data to database for aggregation.
@@ -51,18 +39,6 @@ export class DhondtApiService {
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.detail || 'Failed to submit votes');
-    }
-
-    return await response.json();
-  }
-
-  //Get all voting submissions.
-  static async getVotingSubmissions(limit: number = 100): Promise<VotingSubmissionItem[]> {
-    const response = await fetch(`${BACKEND_URL}/voting-submissions?limit=${limit}`);
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || 'Failed to load submissions');
     }
 
     return await response.json();
