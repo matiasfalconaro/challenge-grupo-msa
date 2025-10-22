@@ -3,7 +3,8 @@ import type {
   ListInput,
   VotingSubmissionResponse,
   AggregatedVotesResponse,
-  ClearSubmissionsResponse
+  ClearSubmissionsResponse,
+  CalculationHistoryItem
 } from '../types/dhondt';
 
 // Use different URLs for server-side vs client-side
@@ -89,6 +90,18 @@ export class DhondtApiService {
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.detail || 'Failed to clear submissions');
+    }
+
+    return await response.json();
+  }
+
+  //Get calculation history.
+  static async getCalculationHistory(limit: number = 20): Promise<CalculationHistoryItem[]> {
+    const response = await fetch(`${BACKEND_URL}/calculation-history?limit=${limit}`);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'Failed to load calculation history');
     }
 
     return await response.json();

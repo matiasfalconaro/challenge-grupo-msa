@@ -44,3 +44,11 @@ export interface ClearSubmissionsResponse {
   message: string;
   deleted_count: number;
 }
+
+export interface CalculationHistoryItem {
+  id: number;
+  timestamp: string;
+  total_seats: number;
+  total_votes: number;
+  results: ListResult[];
+}

@@ -4,7 +4,7 @@ import Modal from '../components/Modal.astro';
 import ResultsTable from '../components/ResultsTable.astro';
 import ResultsChart from '../components/ResultsChart.astro';
 import { DhondtApiService } from '../services/api';
-import type { ListInput } from '../types/dhondt';
+import type { ListInput, CalculationHistoryItem } from '../types/dhondt';
 
 // Predefined parties (Lista A through Lista J)
 const PREDEFINED_PARTIES = [
@@ -23,6 +23,7 @@ const PREDEFINED_PARTIES = [
 let submitResult = null;
 let aggregateResult = null;
 let aggregatedVotes = null;
+let calculationHistory: CalculationHistoryItem[] | null = null;
 let error = null;
 let successMessage = null;
 let activeTab = 'submit'; // Default active tab
@@ -72,6 +73,13 @@ if (Astro.request.method === 'POST') {
         aggregateResult = await DhondtApiService.calculateAggregate(totalSeats, true);
         successMessage = 'Cálculo completado exitosamente';
         activeTab = 'calculate';
+
+        // Refresh calculation history after successful calculation
+        try {
+          calculationHistory = await DhondtApiService.getCalculationHistory();
+        } catch (e: any) {
+          console.error('Failed to refresh calculation history:', e.message);
+        }
       }
     } else if (action === 'clear-submissions') {
       // Clear all submissions
@@ -96,6 +104,16 @@ if (!aggregatedVotes && !error) {
     }
   }
 }
+
+// Load calculation history on initial page load
+if (!calculationHistory && !error) {
+  try {
+    calculationHistory = await DhondtApiService.getCalculationHistory();
+  } catch (e: any) {
+    // It's OK if there are no calculations yet
+    console.error('Failed to load calculation history:', e.message);
+  }
+}
 ---
 
 <Layout title="Calculadora D'Hondt - Votación Agregada">
@@ -114,11 +132,11 @@ if (!aggregatedVotes && !error) {
         <span class="tab-label">Enviar Votos</span>
       </button>
       <button
-        class={`tab-button ${activeTab === 'aggregate' ? 'active' : ''}`}
-        data-tab="aggregate"
+        class={`tab-button ${activeTab === 'history' ? 'active' : ''}`}
+        data-tab="history"
         type="button"
       >
-        <span class="tab-label">Votos Agregados</span>
+        <span class="tab-label">Historial</span>
       </button>
       <button
         class={`tab-button ${activeTab === 'calculate' ? 'active' : ''}`}
@@ -171,24 +189,29 @@ if (!aggregatedVotes && !error) {
         </div>
       </div>
 
-      <!-- Tab 2: View Aggregated Votes -->
-      <div class={`tab-panel ${activeTab === 'aggregate' ? 'active' : ''}`} data-panel="aggregate">
-        <div class="section aggregated-section">
-          <h3>Paso 2: Votos Agregados Actuales</h3>
+      <!-- Tab 2: History (General) -->
+      <div class={`tab-panel ${activeTab === 'history' ? 'active' : ''}`} data-panel="history">
+        <div class="section history-section">
+          <h3>Historial del Sistema</h3>
+          <p>Consulta el historial completo de operaciones: votos agregados y cálculos realizados.</p>
 
-          {aggregatedVotes && aggregatedVotes.total_submissions > 0 ? (
-            <>
-              <p class="aggregate-stats">
-                Total de sumisiones: <strong>{aggregatedVotes.total_submissions}</strong> |
-                Total de votos: <strong>{aggregatedVotes.total_votes.toLocaleString()}</strong>
-              </p>
+          <!-- Current Aggregated State -->
+          {aggregatedVotes && aggregatedVotes.total_submissions > 0 && (
+            <div class="history-subsection">
+              <h4>📊 Estado Actual de Votos Agregados</h4>
+              <div class="aggregate-summary">
+                <p>
+                  <strong>{aggregatedVotes.total_submissions}</strong> submissions registradas |
+                  <strong>{aggregatedVotes.total_votes.toLocaleString()}</strong> votos totales
+                </p>
+              </div>
 
-              <table class="aggregated-table">
+              <table class="compact-table">
                 <thead>
                   <tr>
                     <th>Partido</th>
-                    <th>Votos Totales</th>
-                    <th>Porcentaje</th>
+                    <th>Votos</th>
+                    <th>%</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -204,11 +227,72 @@ if (!aggregatedVotes && !error) {
                   })}
                 </tbody>
               </table>
-            </>
-          ) : (
+            </div>
+          )}
+
+          <!-- Calculation History -->
+          <div class="history-subsection">
+            <h4>🗳️ Historial de Cálculos D'Hondt</h4>
+
+            {calculationHistory && calculationHistory.length > 0 ? (
+              <>
+                <p class="subsection-info">Total de cálculos registrados: <strong>{calculationHistory.length}</strong></p>
+
+                <table class="history-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Fecha y Hora</th>
+                      <th>Escaños</th>
+                      <th>Votos</th>
+                      <th>Partidos c/ Escaños</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {calculationHistory.map((calc) => {
+                      const partiesWithSeats = calc.results.filter(r => r.seats > 0).length;
+                      const dateObj = new Date(calc.timestamp);
+                      const formattedDate = dateObj.toLocaleDateString('es-AR', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                      });
+                      const formattedTime = dateObj.toLocaleTimeString('es-AR', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                      });
+
+                      return (
+                        <tr class="history-row">
+                          <td><strong>#{calc.id}</strong></td>
+                          <td>
+                            <div class="datetime-cell">
+                              <span class="date">{formattedDate}</span>
+                              <span class="time">{formattedTime}</span>
+                            </div>
+                          </td>
+                          <td class="seats-cell">{calc.total_seats}</td>
+                          <td class="votes-cell">{calc.total_votes.toLocaleString()}</td>
+                          <td class="parties-cell">{partiesWithSeats} partidos</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </>
+            ) : (
+              <div class="empty-state-small">
+                <p>📭 No hay cálculos registrados todavía.</p>
+              </div>
+            )}
+          </div>
+
+          {(!aggregatedVotes || aggregatedVotes.total_submissions === 0) &&
+           (!calculationHistory || calculationHistory.length === 0) && (
             <div class="empty-state">
-              <p>📭 No hay sumisiones de votos todavía.</p>
-              <p>Utiliza la pestaña "Enviar Votos" para agregar datos de votación.</p>
+              <p>📋 No hay datos históricos disponibles.</p>
+              <p>Comienza enviando votos o realizando cálculos para poblar el historial.</p>
             </div>
           )}
         </div>
@@ -649,42 +733,122 @@ if (!aggregatedVotes && !error) {
       border-color: #999;
     }
 
-    /* Aggregated Section */
-    .aggregated-section {
+    /* History Section */
+    .history-section {
       background: #f0f7ff;
       border: 2px solid #667eea;
     }
 
-    .aggregate-stats {
+    .history-subsection {
       background: white;
-      padding: 15px;
-      border-radius: 5px;
-      margin-bottom: 20px;
-      font-size: 1.1rem;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 25px;
     }
 
-    .aggregated-table {
+    .history-subsection h4 {
+      color: #667eea;
+      margin-top: 0;
+      margin-bottom: 15px;
+      font-size: 1.3rem;
+    }
+
+    .aggregate-summary {
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      border-left: 4px solid #667eea;
+    }
+
+    .aggregate-summary p {
+      margin: 0;
+      font-size: 1rem;
+      color: #333;
+    }
+
+    .subsection-info {
+      color: #666;
+      font-size: 1rem;
+      margin-bottom: 15px;
+    }
+
+    .compact-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+
+    .compact-table th,
+    .compact-table td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .compact-table th {
+      background-color: #667eea;
+      color: white;
+      font-weight: bold;
+    }
+
+    .compact-table tr:hover {
+      background-color: #f9f9f9;
+    }
+
+    .history-table {
       width: 100%;
       margin-top: 15px;
       border-collapse: collapse;
       background: white;
     }
 
-    .aggregated-table th,
-    .aggregated-table td {
+    .history-table th,
+    .history-table td {
       padding: 12px;
       text-align: left;
       border-bottom: 1px solid #ddd;
     }
 
-    .aggregated-table th {
+    .history-table th {
       background-color: #667eea;
       color: white;
       font-weight: bold;
+      font-size: 0.9rem;
     }
 
-    .aggregated-table tr:hover {
+    .history-table tr:hover {
       background-color: #f5f5f5;
+    }
+
+    .datetime-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .datetime-cell .date {
+      font-weight: 600;
+      color: #333;
+    }
+
+    .datetime-cell .time {
+      font-size: 0.85rem;
+      color: #666;
+    }
+
+    .seats-cell,
+    .votes-cell,
+    .parties-cell {
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .empty-state-small {
+      text-align: center;
+      padding: 20px;
+      color: #999;
+      font-style: italic;
     }
 
     /* Danger Section */

@@ -9,7 +9,8 @@ from app.models.casting import (VotingSubmissionRequest,
                                AggregatedVotesResponse,
                                CalculateAggregateRequest,
                                CalculationResponse,
-                               ClearSubmissionsResponse)
+                               ClearSubmissionsResponse,
+                               CalculationHistoryItem)
 from app.services import DhondtService
 from app.core.rate_limit import (limiter,
                                  get_rate_limit)
@@ -94,3 +95,18 @@ def clear_submissions(request: Request):
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f'Failed to clear submissions: {str(e)}')
+
+
+@router.get('/calculation-history', response_model=List[CalculationHistoryItem])
+@limiter.limit(get_rate_limit("history"))
+def get_calculation_history(request: Request, limit: int = 20):
+    """
+    Obtiene el historial de cálculos D'Hondt realizados.
+    """
+    try:
+        history = DhondtService.get_calculation_history(limit=limit)
+        return history
+    except ConnectionError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Failed to retrieve calculation history: {str(e)}')

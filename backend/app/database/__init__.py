@@ -1,4 +1,4 @@
-from .repository import (insert_calculation,
+from .postgresql import (insert_calculation,
                         get_calculation_history,
                         get_database_stats,
                         get_calculation_by_id,
@@ -14,8 +14,7 @@ from .session import (init_db,
                      test_connection,
                      get_db)
 
-__all__ = [# Repository functions (business operations)
-          "insert_calculation",
+__all__ = ["insert_calculation",
           "get_calculation_history",
           "get_database_stats",
           "get_calculation_by_id",
@@ -24,7 +23,6 @@ __all__ = [# Repository functions (business operations)
           "get_aggregated_votes",
           "get_voting_submissions_count",
           "clear_all_voting_submissions",
-          # Session functions (connection management)
           "init_db",
           "get_engine",
           "get_session_factory",

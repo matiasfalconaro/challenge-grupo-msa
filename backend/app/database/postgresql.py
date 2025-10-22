@@ -124,6 +124,7 @@ def get_calculation_history(limit: int = 50) -> List[Dict[str, Any]]:
             # Use the model's to_api_format method to get backward-compatible format
             # This method joins with calculation_results and parties automatically
             calc_dict = calc.to_api_format()
+            calc_dict['id'] = calc.id  # Add id field for history display
             result_list.append(calc_dict)
 
         logger.info(f"Retrieved {len(result_list)} calculation records from normalized schema")

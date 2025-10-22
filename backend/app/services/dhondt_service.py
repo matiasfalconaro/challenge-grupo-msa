@@ -7,7 +7,8 @@ from app.models.casting import (CalculationResponse,
                               VotingSubmissionItem,
                               AggregatedVotesResponse,
                               CalculateAggregateRequest,
-                              ClearSubmissionsResponse)
+                              ClearSubmissionsResponse,
+                              CalculationHistoryItem)
 from app.database import (insert_calculation,
                          get_calculation_history,
                          insert_voting_submissions,
@@ -232,3 +233,35 @@ class DhondtService:
             message=f'Successfully cleared {deleted_count} voting submissions',
             deleted_count=deleted_count
         )
+
+    @staticmethod
+    def get_calculation_history(limit: int = 20) -> List[CalculationHistoryItem]:
+        """
+        Get calculation history from database.
+        """
+        history_data = get_calculation_history(limit=limit)
+
+        # Convert to Pydantic models
+        history_items = []
+        for calc in history_data:
+            # Convert results array to ListResult models
+            results = [
+                ListResult(
+                    name=r['name'],
+                    votes=r['votes'],
+                    seats=r['seats']
+                )
+                for r in calc.get('results', [])
+            ]
+
+            history_items.append(
+                CalculationHistoryItem(
+                    id=calc['id'],
+                    timestamp=calc['timestamp'],
+                    total_seats=calc['total_seats'],
+                    total_votes=calc['total_votes'],
+                    results=results
+                )
+            )
+
+        return history_items
