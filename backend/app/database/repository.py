@@ -6,7 +6,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import (select,
                         desc,
-                        func)
+                        func)   
 
 from app.models.calculation_model import Calculation
 from app.models.party_model import Party

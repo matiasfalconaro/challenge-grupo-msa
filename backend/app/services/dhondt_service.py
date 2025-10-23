@@ -1,6 +1,6 @@
 from typing import (List,
                     Dict)
-from app.models.casting import (CalculationResponse,
+from backend.app.models.schemas import (CalculationResponse,
                               ListResult,
                               VotingSubmissionRequest,
                               VotingSubmissionResponse,

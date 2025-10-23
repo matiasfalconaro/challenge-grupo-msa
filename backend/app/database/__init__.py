@@ -1,4 +1,4 @@
-from .postgresql import (insert_calculation,
+from .repository import (insert_calculation,
                         get_calculation_history,
                         get_database_stats,
                         get_calculation_by_id,
