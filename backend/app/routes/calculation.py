@@ -3,7 +3,7 @@ from fastapi import (APIRouter,
                      HTTPException,
                      Request,
                      status)
-from backend.app.models.schemas import (VotingSubmissionRequest,
+from app.models.schemas import (VotingSubmissionRequest,
                                VotingSubmissionResponse,
                                VotingSubmissionItem,
                                AggregatedVotesResponse,
