@@ -1,0 +1,114 @@
+---
+/**
+ * TabNavigation Component
+ * Displays navigation tabs for switching between different sections
+ *
+ * @prop {TabType} activeTab - Currently active tab identifier
+ */
+
+import type { TabType } from '../utils/constants';
+
+interface Props {
+  activeTab: TabType;
+}
+
+const { activeTab } = Astro.props;
+
+const tabs = [
+  { id: 'submit', label: 'Enviar Votos' },
+  { id: 'history', label: 'Historial' },
+  { id: 'calculate', label: 'Calcular Escaños' },
+  { id: 'clear', label: 'Reiniciar' }
+];
+---
+
+<div class="tabs-nav">
+  {tabs.map(tab => (
+    <button
+      class={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
+      data-tab={tab.id}
+      type="button"
+    >
+      <span class="tab-label">{tab.label}</span>
+    </button>
+  ))}
+</div>
+
+<style>
+  .tabs-nav {
+    display: flex;
+    background: #f8f9fa;
+    border-bottom: 3px solid #e0e0e0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .tabs-nav::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Edge */
+  }
+
+  .tab-button {
+    flex: 1;
+    min-width: 150px;
+    padding: 18px 20px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -3px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #6c757d;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+  }
+
+  .tab-button:hover {
+    background: rgba(102, 126, 234, 0.05);
+    color: #667eea;
+  }
+
+  .tab-button.active {
+    color: #667eea;
+    background: white;
+    border-bottom-color: #667eea;
+  }
+
+  .tab-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  }
+
+  .tab-label {
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .tabs-nav {
+      flex-direction: column;
+    }
+
+    .tab-button {
+      min-width: 100%;
+      flex-direction: row;
+      justify-content: flex-start;
+      padding: 15px 20px;
+    }
+
+    .tab-label {
+      font-size: 1rem;
+    }
+  }
+</style>

@@ -1,0 +1,189 @@
+---
+/**
+ * CalculateSeatsTab Component
+ * Form for calculating D'Hondt seats on aggregated data
+ *
+ * @prop {boolean} isActive - Whether this tab is currently active
+ * @prop {object | null} aggregatedVotes - Aggregated votes data
+ */
+
+interface AggregatedParty {
+  name: string;
+  votes: number;
+}
+
+interface AggregatedVotes {
+  total_submissions: number;
+  total_votes: number;
+  aggregated_parties: AggregatedParty[];
+}
+
+interface Props {
+  isActive: boolean;
+  aggregatedVotes: AggregatedVotes | null;
+}
+
+const { isActive, aggregatedVotes } = Astro.props;
+
+const hasData = aggregatedVotes && aggregatedVotes.total_submissions > 0;
+---
+
+<div class={`tab-panel ${isActive ? 'active' : ''}`} data-panel="calculate">
+  <div class="section">
+    <h3>Paso 3: Calcular Escaños sobre Datos Agregados</h3>
+    <p>Ejecuta el algoritmo D'Hondt usando TODOS los votos acumulados en la base de datos.</p>
+
+    {hasData ? (
+      <form method="POST">
+        <input type="hidden" name="action" value="calculate-aggregate" />
+
+        <div class="form-group">
+          <label for="totalSeats">Número Total de Escaños:</label>
+          <input
+            type="number"
+            id="totalSeats"
+            name="totalSeats"
+            min="1"
+            required
+            value="10"
+          />
+        </div>
+
+        <button type="submit" class="primary-button half-width">Calcular Escaños (Agregado)</button>
+      </form>
+    ) : (
+      <div class="empty-state">
+        <p>⚠️ No hay datos agregados disponibles para calcular.</p>
+        <p>Primero debes enviar datos de votación usando la pestaña "Enviar Votos".</p>
+      </div>
+    )}
+  </div>
+</div>
+
+<style>
+  .tab-panel {
+    display: none;
+    padding: 30px;
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .tab-panel.active {
+    display: block;
+  }
+
+  .section {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+  }
+
+  .section h3 {
+    color: #667eea;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.5rem;
+  }
+
+  .section p {
+    color: #666;
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .form-group input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+  }
+
+  .form-group input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .primary-button {
+    background: #667eea;
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: transform 0.2s, box-shadow 0.2s;
+    width: 100%;
+    margin-top: 15px;
+  }
+
+  .primary-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+  }
+
+  .primary-button:active {
+    transform: translateY(0);
+  }
+
+  .half-width {
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6c757d;
+  }
+
+  .empty-state p {
+    font-size: 1.1rem;
+    margin: 10px 0;
+  }
+
+  .empty-state p:first-child {
+    font-size: 1.3rem;
+    font-weight: 600;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .tab-panel {
+      padding: 20px 15px;
+    }
+
+    .section {
+      padding: 15px;
+    }
+
+    .half-width {
+      width: 100%;
+    }
+  }
+</style>

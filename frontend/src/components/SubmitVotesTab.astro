@@ -1,0 +1,192 @@
+---
+/**
+ * SubmitVotesTab Component
+ * Form for submitting votes to the database
+ *
+ * @prop {boolean} isActive - Whether this tab is currently active
+ * @prop {string[]} predefinedParties - List of predefined party names
+ */
+
+import PartyInput from './PartyInput.astro';
+
+interface Props {
+  isActive: boolean;
+  predefinedParties: string[];
+}
+
+const { isActive, predefinedParties } = Astro.props;
+---
+
+<div class={`tab-panel ${isActive ? 'active' : ''}`} data-panel="submit">
+  <div class="section">
+    <h3>Paso 1: Enviar Datos de Votación</h3>
+
+    <form method="POST">
+      <input type="hidden" name="action" value="submit-votes" />
+
+      <div class="parties-grid">
+        {predefinedParties.map((partyName) => (
+          <PartyInput partyName={partyName} />
+        ))}
+      </div>
+
+      <div class="button-group">
+        <button type="submit" class="primary-button">Enviar Votos a la Base de Datos</button>
+        <button type="button" class="secondary-button" id="cancelSubmitBtn">Limpiar Formulario</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Cancel button functionality for "Enviar Votos" form
+  function initCancelButton() {
+    const cancelBtn = document.getElementById('cancelSubmitBtn');
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => {
+        const submitForm = document.querySelector('[data-panel="submit"] form');
+        if (submitForm instanceof HTMLFormElement) {
+          submitForm.reset();
+
+          const originalText = cancelBtn.textContent;
+          cancelBtn.textContent = 'Formulario Reiniciado';
+          setTimeout(() => {
+            cancelBtn.textContent = originalText || 'Limpiar Formulario';
+          }, 1500);
+        }
+      });
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCancelButton);
+  } else {
+    initCancelButton();
+  }
+</script>
+
+<style>
+  .tab-panel {
+    display: none;
+    padding: 30px;
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .tab-panel.active {
+    display: block;
+  }
+
+  .section {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+  }
+
+  .section h3 {
+    color: #667eea;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.5rem;
+  }
+
+  .parties-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 25px;
+  }
+
+  .button-group {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+  }
+
+  .button-group > button,
+  .button-group > :global(button) {
+    flex: 1;
+    min-width: 200px;
+    margin-top: 0;
+  }
+
+  .primary-button {
+    background: #667eea;
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: transform 0.2s, box-shadow 0.2s;
+    width: 100%;
+  }
+
+  .primary-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+  }
+
+  .primary-button:active {
+    transform: translateY(0);
+  }
+
+  .secondary-button {
+    background: #c45634;
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+    width: 100%;
+  }
+
+  .secondary-button:hover {
+    background: #913e25;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(108, 117, 125, 0.4);
+  }
+
+  .secondary-button:active {
+    transform: translateY(0);
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .tab-panel {
+      padding: 20px 15px;
+    }
+
+    .section {
+      padding: 15px;
+    }
+
+    .parties-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .button-group {
+      flex-direction: column;
+    }
+
+    .button-group > button,
+    .button-group > :global(button) {
+      width: 100%;
+      min-width: 100%;
+    }
+  }
+</style>

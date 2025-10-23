@@ -1,0 +1,268 @@
+---
+/**
+ * CalculationHistoryTable Component
+ * Displays the history of D'Hondt calculations
+ *
+ * @prop {array} calculationHistory - Array of calculation history items
+ * @prop {string} backendUrl - Backend URL for downloading reports
+ */
+
+import type { CalculationHistoryItem } from '../types/dhondt';
+import { formatDate, formatTime } from '../utils/formatting';
+
+interface Props {
+  calculationHistory: CalculationHistoryItem[] | null;
+  backendUrl: string;
+}
+
+const { calculationHistory, backendUrl } = Astro.props;
+---
+
+<div class="history-subsection">
+  <div class="subsection-header">
+    <h4>🗳️ Historial de Cálculos D'Hondt</h4>
+    <button id="downloadReportBtn" class="download-button" type="button">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+      Descargar Reporte Excel
+    </button>
+  </div>
+
+  {calculationHistory && calculationHistory.length > 0 ? (
+    <>
+      <p class="subsection-info">Total de cálculos registrados: <strong>{calculationHistory.length}</strong></p>
+
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Fecha y Hora</th>
+            <th>Escaños</th>
+            <th>Votos</th>
+            <th>Partidos c/ Escaños</th>
+          </tr>
+        </thead>
+        <tbody>
+          {calculationHistory.map((calc) => {
+            const partiesWithSeats = calc.results.filter(r => r.seats > 0).length;
+            const dateObj = new Date(calc.timestamp);
+
+            return (
+              <tr class="history-row">
+                <td><strong>#{calc.id}</strong></td>
+                <td>
+                  <div class="datetime-cell">
+                    <span class="date">{formatDate(dateObj)}</span>
+                    <span class="time">{formatTime(dateObj)}</span>
+                  </div>
+                </td>
+                <td class="seats-cell">{calc.total_seats}</td>
+                <td class="votes-cell">{calc.total_votes.toLocaleString()}</td>
+                <td class="parties-cell">{partiesWithSeats} partidos</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </>
+  ) : (
+    <div class="empty-state-small">
+      <p>📭 No hay cálculos registrados todavía.</p>
+    </div>
+  )}
+</div>
+
+<script define:vars={{ backendUrl }}>
+  // Download report functionality
+  function initDownloadButton() {
+    const downloadBtn = document.getElementById('downloadReportBtn');
+    if (downloadBtn) {
+      downloadBtn.addEventListener('click', () => {
+        console.log('Downloading report from:', backendUrl);
+
+        const downloadUrl = `${backendUrl}/download-report`;
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = '';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+
+        const originalHTML = downloadBtn.innerHTML;
+        downloadBtn.innerHTML = `
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="spinning">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          Descargando...
+        `;
+        downloadBtn.disabled = true;
+
+        link.click();
+        document.body.removeChild(link);
+
+        setTimeout(() => {
+          downloadBtn.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            ¡Descargado!
+          `;
+
+          setTimeout(() => {
+            downloadBtn.innerHTML = originalHTML;
+            downloadBtn.disabled = false;
+          }, 2000);
+        }, 500);
+      });
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDownloadButton);
+  } else {
+    initDownloadButton();
+  }
+</script>
+
+<style>
+  .history-subsection {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+  }
+
+  .history-subsection h4 {
+    color: #667eea;
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+  }
+
+  .subsection-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 15px;
+  }
+
+  .subsection-header h4 {
+    margin-bottom: 0;
+  }
+
+  .subsection-info {
+    color: #666;
+    font-size: 1rem;
+    margin-bottom: 15px;
+  }
+
+  .download-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+  }
+
+  .download-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+    background: #218838;
+  }
+
+  .download-button:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  .download-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  .download-button svg {
+    flex-shrink: 0;
+  }
+
+  .download-button :global(.spinning) {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .history-table {
+    width: 100%;
+    margin-top: 15px;
+    border-collapse: collapse;
+    background: white;
+  }
+
+  .history-table th,
+  .history-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .history-table th {
+    background-color: #667eea;
+    color: white;
+    font-weight: bold;
+    font-size: 0.9rem;
+  }
+
+  .history-table tr:hover {
+    background-color: #f5f5f5;
+  }
+
+  .datetime-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .datetime-cell .date {
+    font-weight: 600;
+    color: #333;
+  }
+
+  .datetime-cell .time {
+    font-size: 0.85rem;
+    color: #666;
+  }
+
+  .seats-cell,
+  .votes-cell,
+  .parties-cell {
+    text-align: center;
+    font-weight: 600;
+  }
+
+  .empty-state-small {
+    text-align: center;
+    padding: 20px;
+    color: #999;
+    font-style: italic;
+  }
+</style>

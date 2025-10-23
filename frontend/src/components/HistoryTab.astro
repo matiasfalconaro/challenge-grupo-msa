@@ -1,0 +1,135 @@
+---
+/**
+ * HistoryTab Component
+ * Displays the system history including aggregated votes and calculation history
+ *
+ * @prop {boolean} isActive - Whether this tab is currently active
+ * @prop {object | null} aggregatedVotes - Aggregated votes data
+ * @prop {array | null} calculationHistory - Calculation history data
+ * @prop {string} backendUrl - Backend URL for downloading reports
+ */
+
+import AggregatedVotesDisplay from './AggregatedVotesDisplay.astro';
+import CalculationHistoryTable from './CalculationHistoryTable.astro';
+import type { CalculationHistoryItem } from '../types/dhondt';
+
+interface AggregatedParty {
+  name: string;
+  votes: number;
+}
+
+interface AggregatedVotes {
+  total_submissions: number;
+  total_votes: number;
+  aggregated_parties: AggregatedParty[];
+}
+
+interface Props {
+  isActive: boolean;
+  aggregatedVotes: AggregatedVotes | null;
+  calculationHistory: CalculationHistoryItem[] | null;
+  backendUrl: string;
+}
+
+const { isActive, aggregatedVotes, calculationHistory, backendUrl } = Astro.props;
+
+const hasAggregatedVotes = aggregatedVotes && aggregatedVotes.total_submissions > 0;
+const hasCalculationHistory = calculationHistory && calculationHistory.length > 0;
+const hasNoData = !hasAggregatedVotes && !hasCalculationHistory;
+---
+
+<div class={`tab-panel ${isActive ? 'active' : ''}`} data-panel="history">
+  <div class="section history-section">
+    <h3>Historial del Sistema</h3>
+    <p>Consulta el historial completo de operaciones: votos agregados y cálculos realizados.</p>
+
+    {hasAggregatedVotes && (
+      <AggregatedVotesDisplay aggregatedVotes={aggregatedVotes} />
+    )}
+
+    <CalculationHistoryTable
+      calculationHistory={calculationHistory}
+      backendUrl={backendUrl}
+    />
+
+    {hasNoData && (
+      <div class="empty-state">
+        <p>📋 No hay datos históricos disponibles.</p>
+        <p>Comienza enviando votos o realizando cálculos para poblar el historial.</p>
+      </div>
+    )}
+  </div>
+</div>
+
+<style>
+  .tab-panel {
+    display: none;
+    padding: 30px;
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .tab-panel.active {
+    display: block;
+  }
+
+  .section {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+  }
+
+  .section h3 {
+    color: #667eea;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.5rem;
+  }
+
+  .section p {
+    color: #666;
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+
+  .history-section {
+    background: #f0f7ff;
+    border: 2px solid #667eea;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6c757d;
+  }
+
+  .empty-state p {
+    font-size: 1.1rem;
+    margin: 10px 0;
+  }
+
+  .empty-state p:first-child {
+    font-size: 1.3rem;
+    font-weight: 600;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .tab-panel {
+      padding: 20px 15px;
+    }
+
+    .section {
+      padding: 15px;
+    }
+  }
+</style>

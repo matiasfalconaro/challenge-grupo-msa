@@ -1,32 +1,29 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Modal from '../components/Modal.astro';
-import ResultsTable from '../components/ResultsTable.astro';
-import ResultsChart from '../components/ResultsChart.astro';
+import MessageBanner from '../components/MessageBanner.astro';
+import TabNavigation from '../components/TabNavigation.astro';
+import SubmitVotesTab from '../components/SubmitVotesTab.astro';
+import HistoryTab from '../components/HistoryTab.astro';
+import CalculateSeatsTab from '../components/CalculateSeatsTab.astro';
+import ClearSubmissionsTab from '../components/ClearSubmissionsTab.astro';
+import CalculationResults from '../components/CalculationResults.astro';
+import TabSwitchingScript from '../components/TabSwitchingScript.astro';
 import { DhondtApiService } from '../services/api';
-import type { ListInput, CalculationHistoryItem } from '../types/dhondt';
+import { PREDEFINED_PARTIES, TABS, FORM_ACTIONS, type TabType } from '../utils/constants';
+import type { ListInput, CalculationHistoryItem, CalculationResult } from '../types/dhondt';
 
-// Predefined parties (Lista A through Lista J)
-const PREDEFINED_PARTIES = [
-  'Lista A',
-  'Lista B',
-  'Lista C',
-  'Lista D',
-  'Lista E',
-  'Lista F',
-  'Lista G',
-  'Lista H',
-  'Lista I',
-  'Lista J'
-];
-
+// State variables
 let submitResult = null;
-let aggregateResult = null;
+let aggregateResult: CalculationResult | null = null;
 let aggregatedVotes = null;
 let calculationHistory: CalculationHistoryItem[] | null = null;
 let error = null;
 let successMessage = null;
-let activeTab = 'submit'; // Default active tab
+let activeTab: TabType = TABS.SUBMIT; // Default active tab
+
+// Get backend URL for components
+const backendUrl = import.meta.env.PUBLIC_BACKEND_URL || 'http://localhost:5000';
 
 // Handle form submissions
 if (Astro.request.method === 'POST') {
@@ -34,7 +31,7 @@ if (Astro.request.method === 'POST') {
     const formData = await Astro.request.formData();
     const action = formData.get('action') as string;
 
-    if (action === 'submit-votes') {
+    if (action === FORM_ACTIONS.SUBMIT_VOTES) {
       // Submit votes to database for aggregation
       const lists: ListInput[] = [];
 
@@ -60,19 +57,19 @@ if (Astro.request.method === 'POST') {
         aggregatedVotes = await DhondtApiService.getAggregatedVotes();
 
         // Switch to aggregated votes tab after successful submission
-        activeTab = 'aggregate';
+        activeTab = TABS.HISTORY;
       }
-    } else if (action === 'calculate-aggregate') {
+    } else if (action === FORM_ACTIONS.CALCULATE_AGGREGATE) {
       // Calculate D'Hondt on aggregate data
       const totalSeats = parseInt(formData.get('totalSeats') as string);
 
       if (totalSeats <= 0) {
         error = 'El total de escaños debe ser mayor que 0';
-        activeTab = 'calculate';
+        activeTab = TABS.CALCULATE;
       } else {
         aggregateResult = await DhondtApiService.calculateAggregate(totalSeats, true);
         successMessage = 'Cálculo completado exitosamente';
-        activeTab = 'calculate';
+        activeTab = TABS.CALCULATE;
 
         // Refresh calculation history after successful calculation
         try {
@@ -81,12 +78,12 @@ if (Astro.request.method === 'POST') {
           console.error('Failed to refresh calculation history:', e.message);
         }
       }
-    } else if (action === 'clear-submissions') {
+    } else if (action === FORM_ACTIONS.CLEAR_SUBMISSIONS) {
       // Clear all submissions
       const clearResult = await DhondtApiService.clearSubmissions();
       successMessage = clearResult.message;
       aggregatedVotes = null;
-      activeTab = 'clear';
+      activeTab = TABS.CLEAR;
     }
   } catch (e: any) {
     error = `Error: ${e.message}`;
@@ -118,356 +115,51 @@ if (!calculationHistory && !error) {
 
 <Layout title="Calculadora D'Hondt - Votación Agregada">
 
-  {error && <div class="error">{error}</div>}
-  {successMessage && <div class="success">{successMessage}</div>}
+  <MessageBanner error={error} successMessage={successMessage} />
 
-  <!-- Tab Navigation -->
+  {/* Tab Navigation and Content */}
   <div class="tabs-container">
-    <div class="tabs-nav">
-      <button
-        class={`tab-button ${activeTab === 'submit' ? 'active' : ''}`}
-        data-tab="submit"
-        type="button"
-      >
-        <span class="tab-label">Enviar Votos</span>
-      </button>
-      <button
-        class={`tab-button ${activeTab === 'history' ? 'active' : ''}`}
-        data-tab="history"
-        type="button"
-      >
-        <span class="tab-label">Historial</span>
-      </button>
-      <button
-        class={`tab-button ${activeTab === 'calculate' ? 'active' : ''}`}
-        data-tab="calculate"
-        type="button"
-      >
-        <span class="tab-label">Calcular Escaños</span>
-      </button>
-      <button
-        class={`tab-button ${activeTab === 'clear' ? 'active' : ''}`}
-        data-tab="clear"
-        type="button"
-      >
-        <span class="tab-label">Reiniciar</span>
-      </button>
-    </div>
+    <TabNavigation activeTab={activeTab} />
 
     <div class="tabs-content">
-      <!-- Tab 1: Submit Votes -->
-      <div class={`tab-panel ${activeTab === 'submit' ? 'active' : ''}`} data-panel="submit">
-        <div class="section">
-          <h3>Paso 1: Enviar Datos de Votación</h3>
+      <SubmitVotesTab
+        isActive={activeTab === TABS.SUBMIT}
+        predefinedParties={[...PREDEFINED_PARTIES]}
+      />
 
-          <form method="POST">
-            <input type="hidden" name="action" value="submit-votes" />
+      <HistoryTab
+        isActive={activeTab === TABS.HISTORY}
+        aggregatedVotes={aggregatedVotes}
+        calculationHistory={calculationHistory}
+        backendUrl={backendUrl}
+      />
 
-            <div class="parties-grid">
-              {PREDEFINED_PARTIES.map((partyName) => (
-                <div class="party-input-card">
-                  <label class="party-label" for={`party_${partyName}`}>
-                    <span class="party-name">{partyName}</span>
-                  </label>
-                  <input
-                    type="number"
-                    id={`party_${partyName}`}
-                    name={`party_${partyName}`}
-                    min="0"
-                    placeholder="0"
-                    class="party-votes-input"
-                  />
-                </div>
-              ))}
-            </div>
+      <CalculateSeatsTab
+        isActive={activeTab === TABS.CALCULATE}
+        aggregatedVotes={aggregatedVotes}
+      />
 
-            <div class="button-group">
-              <button type="submit" class="primary-button">Enviar Votos a la Base de Datos</button>
-              <button type="button" class="secondary-button" id="cancelSubmitBtn">Limpiar Formulario</button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- Tab 2: History (General) -->
-      <div class={`tab-panel ${activeTab === 'history' ? 'active' : ''}`} data-panel="history">
-        <div class="section history-section">
-          <h3>Historial del Sistema</h3>
-          <p>Consulta el historial completo de operaciones: votos agregados y cálculos realizados.</p>
-
-          <!-- Current Aggregated State -->
-          {aggregatedVotes && aggregatedVotes.total_submissions > 0 && (
-            <div class="history-subsection">
-              <h4>📊 Estado Actual de Votos Agregados</h4>
-              <div class="aggregate-summary">
-                <p>
-                  <strong>{aggregatedVotes.total_submissions}</strong> submissions registradas |
-                  <strong>{aggregatedVotes.total_votes.toLocaleString()}</strong> votos totales
-                </p>
-              </div>
-
-              <table class="compact-table">
-                <thead>
-                  <tr>
-                    <th>Partido</th>
-                    <th>Votos</th>
-                    <th>%</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {aggregatedVotes.aggregated_parties.map((party) => {
-                    const percentage = ((party.votes / aggregatedVotes.total_votes) * 100).toFixed(2);
-                    return (
-                      <tr>
-                        <td><strong>{party.name}</strong></td>
-                        <td>{party.votes.toLocaleString()}</td>
-                        <td>{percentage}%</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          <!-- Calculation History -->
-          <div class="history-subsection">
-            <h4>🗳️ Historial de Cálculos D'Hondt</h4>
-
-            {calculationHistory && calculationHistory.length > 0 ? (
-              <>
-                <p class="subsection-info">Total de cálculos registrados: <strong>{calculationHistory.length}</strong></p>
-
-                <table class="history-table">
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Fecha y Hora</th>
-                      <th>Escaños</th>
-                      <th>Votos</th>
-                      <th>Partidos c/ Escaños</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {calculationHistory.map((calc) => {
-                      const partiesWithSeats = calc.results.filter(r => r.seats > 0).length;
-                      const dateObj = new Date(calc.timestamp);
-                      const formattedDate = dateObj.toLocaleDateString('es-AR', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit'
-                      });
-                      const formattedTime = dateObj.toLocaleTimeString('es-AR', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit'
-                      });
-
-                      return (
-                        <tr class="history-row">
-                          <td><strong>#{calc.id}</strong></td>
-                          <td>
-                            <div class="datetime-cell">
-                              <span class="date">{formattedDate}</span>
-                              <span class="time">{formattedTime}</span>
-                            </div>
-                          </td>
-                          <td class="seats-cell">{calc.total_seats}</td>
-                          <td class="votes-cell">{calc.total_votes.toLocaleString()}</td>
-                          <td class="parties-cell">{partiesWithSeats} partidos</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </>
-            ) : (
-              <div class="empty-state-small">
-                <p>📭 No hay cálculos registrados todavía.</p>
-              </div>
-            )}
-          </div>
-
-          {(!aggregatedVotes || aggregatedVotes.total_submissions === 0) &&
-           (!calculationHistory || calculationHistory.length === 0) && (
-            <div class="empty-state">
-              <p>📋 No hay datos históricos disponibles.</p>
-              <p>Comienza enviando votos o realizando cálculos para poblar el historial.</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <!-- Tab 3: Calculate Seats -->
-      <div class={`tab-panel ${activeTab === 'calculate' ? 'active' : ''}`} data-panel="calculate">
-        <div class="section">
-          <h3>Paso 3: Calcular Escaños sobre Datos Agregados</h3>
-          <p>Ejecuta el algoritmo D'Hondt usando TODOS los votos acumulados en la base de datos.</p>
-
-          {aggregatedVotes && aggregatedVotes.total_submissions > 0 ? (
-            <form method="POST">
-              <input type="hidden" name="action" value="calculate-aggregate" />
-
-              <div class="form-group">
-                <label for="totalSeats">Número Total de Escaños:</label>
-                <input
-                  type="number"
-                  id="totalSeats"
-                  name="totalSeats"
-                  min="1"
-                  required
-                  value="10"
-                />
-              </div>
-
-              <button type="submit" class="primary-button half-width">Calcular Escaños (Agregado)</button>
-            </form>
-          ) : (
-            <div class="empty-state">
-              <p>⚠️ No hay datos agregados disponibles para calcular.</p>
-              <p>Primero debes enviar datos de votación usando la pestaña "Enviar Votos".</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <!-- Tab 4: Clear Submissions -->
-      <div class={`tab-panel ${activeTab === 'clear' ? 'active' : ''}`} data-panel="clear">
-        <div class="section danger-section">
-          <h3>Paso 4: Reiniciar Sistema</h3>
-          <p>Elimina TODAS las sumisiones de votos de la base de datos para empezar de nuevo.</p>
-
-          {aggregatedVotes && aggregatedVotes.total_submissions > 0 ? (
-            <>
-              <div class="warning-box">
-                <p><strong>⚠️ Advertencia:</strong></p>
-                <p>Esta acción eliminará permanentemente:</p>
-                <ul>
-                  <li>{aggregatedVotes.total_submissions} sumisión(es) de votos</li>
-                  <li>{aggregatedVotes.total_votes.toLocaleString()} votos totales</li>
-                  <li>Datos de {aggregatedVotes.aggregated_parties.length} partido(s)</li>
-                </ul>
-              </div>
-
-              <form method="POST" onsubmit="return confirm('¿Está seguro de que desea eliminar todas las sumisiones?');">
-                <input type="hidden" name="action" value="clear-submissions" />
-                <button type="submit" class="danger-button half-width">Eliminar Todas las Sumisiones</button>
-              </form>
-            </>
-          ) : (
-            <div class="empty-state">
-              <p>✅ No hay datos para eliminar.</p>
-              <p>El sistema está vacío y listo para recibir nuevos datos.</p>
-            </div>
-          )}
-        </div>
-      </div>
+      <ClearSubmissionsTab
+        isActive={activeTab === TABS.CLEAR}
+        aggregatedVotes={aggregatedVotes}
+      />
     </div>
   </div>
 
-  <!-- Modal for Results -->
+  {/* Modal for Results */}
   <Modal id="resultsModal">
     <div id="modalResults">
-      {aggregateResult && (
-        <div>
-          <h2>Resultados del Cálculo Agregado</h2>
-          <ResultsTable result={aggregateResult} />
-          <ResultsChart result={aggregateResult} />
-
-          <!-- Save Information -->
-          <div class="save-info">
-            <div class="save-status">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-              </svg>
-              <div class="save-message">
-                <p class="save-title">Resultados Guardados Exitosamente</p>
-                {aggregateResult.calculation_id && (
-                  <p class="save-id">ID de Cálculo: <code>{aggregateResult.calculation_id}</code></p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {aggregateResult && <CalculationResults result={aggregateResult} />}
     </div>
   </Modal>
 
+  {/* Chart.js Library */}
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
-  <!-- Tab Switching Logic -->
-  <script is:inline>
-    // Tab switching functionality
-    function initTabs() {
-      const tabButtons = document.querySelectorAll('.tab-button');
-      const tabPanels = document.querySelectorAll('.tab-panel');
+  {/* Tab Switching Logic */}
+  <TabSwitchingScript />
 
-      tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-          const targetTab = button.getAttribute('data-tab');
-
-          // Remove active class from all buttons and panels
-          tabButtons.forEach(btn => btn.classList.remove('active'));
-          tabPanels.forEach(panel => panel.classList.remove('active'));
-
-          // Add active class to clicked button and corresponding panel
-          button.classList.add('active');
-          const targetPanel = document.querySelector(`[data-panel="${targetTab}"]`);
-          if (targetPanel) {
-            targetPanel.classList.add('active');
-          }
-
-          // Save active tab to sessionStorage
-          sessionStorage.setItem('activeTab', targetTab);
-        });
-      });
-
-      // Restore active tab from sessionStorage if no server-side tab is set
-      const savedTab = sessionStorage.getItem('activeTab');
-      if (savedTab && !document.querySelector('.tab-button.active')) {
-        const savedButton = document.querySelector(`[data-tab="${savedTab}"]`);
-        if (savedButton) {
-          savedButton.click();
-        }
-      }
-    }
-
-    // Cancel button functionality for "Enviar Votos" form
-    function initCancelButton() {
-      const cancelBtn = document.getElementById('cancelSubmitBtn');
-      if (cancelBtn) {
-        cancelBtn.addEventListener('click', () => {
-          // Get the form in the submit tab
-          const submitForm = document.querySelector('[data-panel="submit"] form');
-          if (submitForm) {
-            // Reset all form fields
-            submitForm.reset();
-
-            // Optional: Show a brief confirmation message
-            const originalText = cancelBtn.textContent;
-            cancelBtn.textContent = 'Formulario Reiniciado';
-            setTimeout(() => {
-              cancelBtn.textContent = originalText;
-            }, 1500);
-          }
-        });
-      }
-    }
-
-    // Initialize tabs when DOM is ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => {
-        initTabs();
-        initCancelButton();
-      });
-    } else {
-      initTabs();
-      initCancelButton();
-    }
-  </script>
-
-  <!-- Modal Logic -->
+  {/* Modal Logic */}
   <script is:inline define:vars={{ hasResult: !!aggregateResult }}>
     // Wait for DOM and modal functions to be ready
     function waitForModal() {
@@ -497,48 +189,6 @@ if (!calculationHistory && !error) {
   </script>
 
   <style>
-    /* Info Banner */
-    .info-banner {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 20px;
-      border-radius: 8px;
-      margin-bottom: 30px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .info-banner h2 {
-      margin: 0 0 10px 0;
-      font-size: 1.5rem;
-    }
-
-    .info-banner p {
-      margin: 0;
-      font-size: 1rem;
-      opacity: 0.95;
-    }
-
-    /* Messages */
-    .success {
-      background-color: #d4edda;
-      color: #155724;
-      padding: 15px;
-      border-radius: 5px;
-      margin-bottom: 20px;
-      border-left: 4px solid #28a745;
-      animation: slideIn 0.3s ease-out;
-    }
-
-    .error {
-      background-color: #f8d7da;
-      color: #721c24;
-      padding: 15px;
-      border-radius: 5px;
-      margin-bottom: 20px;
-      border-left: 4px solid #dc3545;
-      animation: slideIn 0.3s ease-out;
-    }
-
     /* Tabs Container */
     .tabs-container {
       background: white;
@@ -547,662 +197,16 @@ if (!calculationHistory && !error) {
       overflow: hidden;
     }
 
-    /* Tab Navigation */
-    .tabs-nav {
-      display: flex;
-      background: #f8f9fa;
-      border-bottom: 3px solid #e0e0e0;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-
-      scrollbar-width: none; /* Firefox */
-    }
-    .tabs-nav::-webkit-scrollbar {
-      display: none; /* Chrome, Safari, Edge */
-    }
-
-    .tab-button {
-      flex: 1;
-      min-width: 150px;
-      padding: 18px 20px;
-      background: transparent;
-      border: none;
-      border-bottom: 3px solid transparent;
-      margin-bottom: -3px;
-      cursor: pointer;
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: #6c757d;
-      transition: all 0.3s ease;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      position: relative;
-    }
-
-    .tab-button:hover {
-      background: rgba(102, 126, 234, 0.05);
-      color: #667eea;
-    }
-
-    .tab-button.active {
-      color: #667eea;
-      background: white;
-      border-bottom-color: #667eea;
-    }
-
-    .tab-button.active::after {
-      content: '';
-      position: absolute;
-      bottom: -3px;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-    }
-
-    .tab-icon {
-      font-size: 1.5rem;
-      filter: grayscale(100%);
-      transition: filter 0.3s ease;
-    }
-
-    .tab-button:hover .tab-icon,
-    .tab-button.active .tab-icon {
-      filter: grayscale(0%);
-    }
-
-    .tab-label {
-      font-size: 0.9rem;
-      white-space: nowrap;
-    }
-
     /* Tab Content */
     .tabs-content {
       position: relative;
       min-height: 400px;
     }
 
-    .tab-panel {
-      display: none;
-      padding: 30px;
-      animation: fadeIn 0.3s ease-in-out;
-    }
-
-    .tab-panel.active {
-      display: block;
-    }
-
-    /* Section Styles */
-    .section {
-      background: white;
-      padding: 25px;
-      border-radius: 8px;
-    }
-
-    .section h3 {
-      color: #667eea;
-      margin-top: 0;
-      margin-bottom: 10px;
-      font-size: 1.5rem;
-    }
-
-    .section h4, .section h5 {
-      color: #555;
-      margin-bottom: 15px;
-    }
-
-    .section p {
-      color: #666;
-      margin-bottom: 20px;
-      line-height: 1.6;
-    }
-
-    .info-text {
-      font-size: 0.95rem;
-      font-style: italic;
-      color: #777;
-      margin-top: -10px;
-      margin-bottom: 25px;
-    }
-
-    /* Parties Grid Layout */
-    .parties-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 20px;
-      margin-bottom: 25px;
-    }
-
-    .party-input-card {
-      background: #f8f9fa;
-      border: 2px solid #e0e0e0;
-      border-radius: 8px;
-      padding: 15px;
-      transition: all 0.3s ease;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .party-input-card:hover {
-      border-color: #667eea;
-      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
-      transform: translateY(-2px);
-    }
-
-    .party-input-card:focus-within {
-      border-color: #667eea;
-      background: #f0f7ff;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-
-    .party-label {
-      font-weight: 600;
-      font-size: 1rem;
-      color: #333;
-      margin-bottom: 5px;
-      cursor: pointer;
-    }
-
-    .party-name {
-      display: block;
-      color: #667eea;
-      font-size: 1.1rem;
-    }
-
-    .party-votes-input {
-      width: 100%;
-      padding: 10px 12px;
-      border: 2px solid #ddd;
-      border-radius: 5px;
-      font-size: 1rem;
-      font-weight: 600;
-      transition: all 0.2s ease;
-      background: white;
-    }
-
-    .party-votes-input:focus {
-      outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-
-    .party-votes-input:hover {
-      border-color: #999;
-    }
-
-    /* History Section */
-    .history-section {
-      background: #f0f7ff;
-      border: 2px solid #667eea;
-    }
-
-    .history-subsection {
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      margin-bottom: 25px;
-    }
-
-    .history-subsection h4 {
-      color: #667eea;
-      margin-top: 0;
-      margin-bottom: 15px;
-      font-size: 1.3rem;
-    }
-
-    .aggregate-summary {
-      background: #f8f9fa;
-      padding: 12px;
-      border-radius: 5px;
-      margin-bottom: 15px;
-      border-left: 4px solid #667eea;
-    }
-
-    .aggregate-summary p {
-      margin: 0;
-      font-size: 1rem;
-      color: #333;
-    }
-
-    .subsection-info {
-      color: #666;
-      font-size: 1rem;
-      margin-bottom: 15px;
-    }
-
-    .compact-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.95rem;
-    }
-
-    .compact-table th,
-    .compact-table td {
-      padding: 10px 12px;
-      text-align: left;
-      border-bottom: 1px solid #e0e0e0;
-    }
-
-    .compact-table th {
-      background-color: #667eea;
-      color: white;
-      font-weight: bold;
-    }
-
-    .compact-table tr:hover {
-      background-color: #f9f9f9;
-    }
-
-    .history-table {
-      width: 100%;
-      margin-top: 15px;
-      border-collapse: collapse;
-      background: white;
-    }
-
-    .history-table th,
-    .history-table td {
-      padding: 12px;
-      text-align: left;
-      border-bottom: 1px solid #ddd;
-    }
-
-    .history-table th {
-      background-color: #667eea;
-      color: white;
-      font-weight: bold;
-      font-size: 0.9rem;
-    }
-
-    .history-table tr:hover {
-      background-color: #f5f5f5;
-    }
-
-    .datetime-cell {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .datetime-cell .date {
-      font-weight: 600;
-      color: #333;
-    }
-
-    .datetime-cell .time {
-      font-size: 0.85rem;
-      color: #666;
-    }
-
-    .seats-cell,
-    .votes-cell,
-    .parties-cell {
-      text-align: center;
-      font-weight: 600;
-    }
-
-    .empty-state-small {
-      text-align: center;
-      padding: 20px;
-      color: #999;
-      font-style: italic;
-    }
-
-    /* Danger Section */
-    .danger-section {
-      background: #fff5f5;
-      border: 2px solid #dc3545;
-    }
-
-    .danger-section h3 {
-      color: #dc3545;
-    }
-
-    .warning-box {
-      background: white;
-      border: 2px solid #ffc107;
-      border-radius: 5px;
-      padding: 20px;
-      margin-bottom: 20px;
-    }
-
-    .warning-box p {
-      margin: 10px 0;
-    }
-
-    .warning-box ul {
-      margin: 10px 0;
-      padding-left: 25px;
-    }
-
-    .warning-box li {
-      margin: 5px 0;
-      color: #856404;
-    }
-
-    /* Empty State */
-    .empty-state {
-      text-align: center;
-      padding: 40px 20px;
-      color: #6c757d;
-    }
-
-    .empty-state p {
-      font-size: 1.1rem;
-      margin: 10px 0;
-    }
-
-    .empty-state p:first-child {
-      font-size: 1.3rem;
-      font-weight: 600;
-    }
-
-    /* Buttons */
-    .primary-button {
-      background: #667eea;
-      color: white;
-      padding: 12px 24px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 1rem;
-      font-weight: bold;
-      transition: transform 0.2s, box-shadow 0.2s;
-      width: 100%;
-      margin-top: 15px;
-    }
-
-    .primary-button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
-    }
-
-    .primary-button:active {
-      transform: translateY(0);
-    }
-
-    .secondary-button {
-      background: #c45634;
-      color: white;
-      padding: 12px 24px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 1rem;
-      font-weight: bold;
-      transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
-      width: 100%;
-      margin-top: 15px;
-    }
-
-    .secondary-button:hover {
-      background: #913e25;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(108, 117, 125, 0.4);
-    }
-
-    .secondary-button:active {
-      transform: translateY(0);
-    }
-
-    .danger-button {
-      background-color: #dc3545;
-      color: white;
-      padding: 12px 24px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 1rem;
-      font-weight: bold;
-      transition: background-color 0.2s, transform 0.2s;
-      width: 100%;
-    }
-
-    .danger-button:hover {
-      background-color: #c82333;
-      transform: translateY(-2px);
-    }
-
-    .danger-button:active {
-      transform: translateY(0);
-    }
-
-    /* Button Groups */
-    .button-group {
-      display: flex;
-      gap: 15px;
-      margin-top: 15px;
-      flex-wrap: wrap;
-    }
-
-    .button-group > button {
-      flex: 1;
-      min-width: 200px;
-      margin-top: 0;
-    }
-
-    /* Half Width Buttons */
-    .half-width {
-      width: 50%;
-      margin-left: auto;
-      margin-right: auto;
-      display: block;
-    }
-
-    /* Modal-specific styling */
-    #modalResults h2 {
-      color: #667eea;
-      margin-bottom: 20px;
-      font-size: 1.8rem;
-      text-align: center;
-    }
-
-    #modalResults .results-section {
-      margin-bottom: 30px;
-    }
-
-    #modalResults .chart-container {
-      margin-top: 30px;
-      margin-bottom: 30px;
-    }
-
-    #modalResults .results-table {
-      margin: 20px 0;
-    }
-
-    #modalResults > div {
-      animation: fadeInContent 0.4s ease-in-out;
-    }
-
-    /* Save Information Section */
-    .save-info {
-      margin-top: 30px;
-      padding-top: 25px;
-      border-top: 2px solid #e0e0e0;
-    }
-
-    .save-status {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 15px;
-      padding: 20px;
-      background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-      border: 2px solid #28a745;
-      border-radius: 10px;
-      animation: slideIn 0.5s ease-out;
-    }
-
-    .save-status svg {
-      color: #28a745;
-      flex-shrink: 0;
-      animation: checkmark 0.5s ease-in-out;
-    }
-
-    .save-message {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-
-    .save-title {
-      margin: 0;
-      color: #155724;
-      font-size: 1.1rem;
-      font-weight: 700;
-    }
-
-    .save-id {
-      margin: 0;
-      color: #155724;
-      font-size: 0.9rem;
-      font-weight: 500;
-    }
-
-    .save-id code {
-      background: rgba(21, 87, 36, 0.1);
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-family: 'Courier New', monospace;
-      font-weight: 600;
-      color: #0d4421;
-    }
-
-    @keyframes checkmark {
-      0% {
-        transform: scale(0) rotate(-45deg);
-        opacity: 0;
-      }
-      50% {
-        transform: scale(1.2) rotate(0deg);
-      }
-      100% {
-        transform: scale(1) rotate(0deg);
-        opacity: 1;
-      }
-    }
-
-    /* Animations */
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes fadeInContent {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateX(-20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
-
     /* Responsive Design */
     @media (max-width: 768px) {
-      .tabs-nav {
-        flex-direction: column;
-      }
-
-      .tab-button {
-        min-width: 100%;
-        flex-direction: row;
-        justify-content: flex-start;
-        padding: 15px 20px;
-      }
-
-      .tab-label {
-        font-size: 1rem;
-      }
-
-      .tab-icon {
-        font-size: 1.3rem;
-        margin-right: 10px;
-      }
-
-      .tab-panel {
-        padding: 20px 15px;
-      }
-
-      .section {
-        padding: 15px;
-      }
-
-      .parties-grid {
-        grid-template-columns: 1fr;
-      }
-
-      /* Mobile button adjustments */
-      .button-group {
-        flex-direction: column;
-      }
-
-      .button-group > button {
-        width: 100%;
-        min-width: 100%;
-      }
-
-      .half-width {
-        width: 100%;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .info-banner {
-        padding: 15px;
-      }
-
-      .info-banner h2 {
-        font-size: 1.2rem;
-      }
-
-      .info-banner p {
-        font-size: 0.9rem;
-      }
-
-      .section h3 {
-        font-size: 1.2rem;
-      }
-
-      .aggregate-stats {
-        font-size: 0.95rem;
-      }
-
-      .save-status {
-        flex-direction: column;
-        gap: 10px;
-        padding: 15px;
-      }
-
-      .save-title {
-        font-size: 1rem;
-        text-align: center;
-      }
-
-      .save-id {
-        font-size: 0.85rem;
-        text-align: center;
+      .tabs-content {
+        min-height: 300px;
       }
     }
   </style>

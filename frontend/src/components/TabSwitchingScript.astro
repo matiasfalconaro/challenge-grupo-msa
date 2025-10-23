@@ -1,0 +1,51 @@
+---
+/**
+ * TabSwitchingScript Component
+ * Client-side script for handling tab navigation
+ * This component should be included once at the page level
+ */
+---
+
+<script is:inline>
+  // Tab switching functionality
+  function initTabs() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+
+    tabButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const targetTab = button.getAttribute('data-tab');
+
+        // Remove active class from all buttons and panels
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        tabPanels.forEach(panel => panel.classList.remove('active'));
+
+        // Add active class to clicked button and corresponding panel
+        button.classList.add('active');
+        const targetPanel = document.querySelector(`[data-panel="${targetTab}"]`);
+        if (targetPanel) {
+          targetPanel.classList.add('active');
+        }
+
+        // Save active tab to sessionStorage
+        sessionStorage.setItem('activeTab', targetTab);
+      });
+    });
+
+    // Restore active tab from sessionStorage if no server-side tab is set
+    const savedTab = sessionStorage.getItem('activeTab');
+    if (savedTab && !document.querySelector('.tab-button.active')) {
+      const savedButton = document.querySelector(`[data-tab="${savedTab}"]`);
+      if (savedButton) {
+        savedButton.click();
+      }
+    }
+  }
+
+  // Initialize tabs when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTabs);
+  } else {
+    initTabs();
+  }
+</script>

@@ -1,0 +1,88 @@
+---
+/**
+ * PartyInput Component
+ * Individual party vote input card
+ *
+ * @prop {string} partyName - Name of the party
+ */
+
+interface Props {
+  partyName: string;
+}
+
+const { partyName } = Astro.props;
+---
+
+<div class="party-input-card">
+  <label class="party-label" for={`party_${partyName}`}>
+    <span class="party-name">{partyName}</span>
+  </label>
+  <input
+    type="number"
+    id={`party_${partyName}`}
+    name={`party_${partyName}`}
+    min="0"
+    placeholder="0"
+    class="party-votes-input"
+  />
+</div>
+
+<style>
+  .party-input-card {
+    background: #f8f9fa;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .party-input-card:hover {
+    border-color: #667eea;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+    transform: translateY(-2px);
+  }
+
+  .party-input-card:focus-within {
+    border-color: #667eea;
+    background: #f0f7ff;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .party-label {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #333;
+    margin-bottom: 5px;
+    cursor: pointer;
+  }
+
+  .party-name {
+    display: block;
+    color: #667eea;
+    font-size: 1.1rem;
+  }
+
+  .party-votes-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    background: white;
+  }
+
+  .party-votes-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .party-votes-input:hover {
+    border-color: #999;
+  }
+</style>
