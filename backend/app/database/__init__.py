@@ -13,6 +13,7 @@ from .session import (init_db,
                      dispose_engine,
                      test_connection,
                      get_db)
+from .raw_query_executor import RawQueryExecutor
 
 __all__ = ["insert_calculation",
           "get_calculation_history",
@@ -28,4 +29,5 @@ __all__ = ["insert_calculation",
           "get_session_factory",
           "dispose_engine",
           "test_connection",
-          "get_db"]
+          "get_db",
+          "RawQueryExecutor"]
