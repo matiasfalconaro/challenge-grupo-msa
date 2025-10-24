@@ -7,18 +7,10 @@
  */
 
 import { formatNumber, formatPercentage } from '../utils/formatting';
-
-interface AggregatedParty {
-  name: string;
-  votes: number;
-}
+import type { AggregatedVotesResponse } from '../types/dhondt';
 
 interface Props {
-  aggregatedVotes: {
-    total_submissions: number;
-    total_votes: number;
-    aggregated_parties: AggregatedParty[];
-  };
+  aggregatedVotes: AggregatedVotesResponse;
 }
 
 const { aggregatedVotes } = Astro.props;

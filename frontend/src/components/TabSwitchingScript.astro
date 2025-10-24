@@ -6,19 +6,41 @@
  */
 ---
 
-<script is:inline>
+<script>
   // Tab switching functionality
   function initTabs() {
     const tabButtons = document.querySelectorAll('.tab-button');
     const tabPanels = document.querySelectorAll('.tab-panel');
 
+    console.log('[TabSwitching] Initializing tabs...', {
+      buttons: tabButtons.length,
+      panels: tabPanels.length
+    });
+
+    if (tabButtons.length === 0) {
+      console.error('[TabSwitching] No tab buttons found!');
+      return;
+    }
+
+    // Remove existing listeners to prevent duplicates
     tabButtons.forEach(button => {
+      // Clone and replace to remove all event listeners
+      const newButton = button.cloneNode(true);
+      button.parentNode?.replaceChild(newButton, button);
+    });
+
+    // Re-query after cloning
+    const freshTabButtons = document.querySelectorAll('.tab-button');
+    const freshTabPanels = document.querySelectorAll('.tab-panel');
+
+    freshTabButtons.forEach(button => {
       button.addEventListener('click', () => {
         const targetTab = button.getAttribute('data-tab');
+        console.log('[TabSwitching] Tab clicked:', targetTab);
 
         // Remove active class from all buttons and panels
-        tabButtons.forEach(btn => btn.classList.remove('active'));
-        tabPanels.forEach(panel => panel.classList.remove('active'));
+        freshTabButtons.forEach(btn => btn.classList.remove('active'));
+        freshTabPanels.forEach(panel => panel.classList.remove('active'));
 
         // Add active class to clicked button and corresponding panel
         button.classList.add('active');
@@ -48,4 +70,8 @@
   } else {
     initTabs();
   }
+
+  // Re-initialize tabs after Astro View Transitions navigation
+  // This ensures event listeners are re-attached after form submissions
+  document.addEventListener('astro:page-load', initTabs);
 </script>

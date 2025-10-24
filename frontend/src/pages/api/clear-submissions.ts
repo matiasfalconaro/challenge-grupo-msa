@@ -1,8 +1,12 @@
 import type { APIRoute } from 'astro';
+import { getBackendUrl } from '../../utils/env';
+
+// Disable prerendering for this API route
+export const prerender = false;
 
 export const DELETE: APIRoute = async () => {
   try {
-    const backendUrl = import.meta.env.BACKEND_URL || 'http://backend:5000';
+    const backendUrl = getBackendUrl();
 
     const response = await fetch(`${backendUrl}/clear-submissions`, {
       method: 'DELETE',

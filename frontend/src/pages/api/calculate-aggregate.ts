@@ -1,8 +1,12 @@
 import type { APIRoute } from 'astro';
+import { getBackendUrl } from '../../utils/env';
+
+// Disable prerendering for this API route
+export const prerender = false;
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const backendUrl = import.meta.env.BACKEND_URL || 'http://backend:5000';
+    const backendUrl = getBackendUrl();
     const data = await request.json();
 
     const response = await fetch(`${backendUrl}/calculate-aggregate`, {

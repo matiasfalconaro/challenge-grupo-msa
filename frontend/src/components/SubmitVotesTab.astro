@@ -43,15 +43,20 @@ const { isActive, predefinedParties } = Astro.props;
   function initCancelButton() {
     const cancelBtn = document.getElementById('cancelSubmitBtn');
     if (cancelBtn) {
-      cancelBtn.addEventListener('click', () => {
+      // Remove existing listener to prevent duplicates
+      const newCancelBtn = cancelBtn.cloneNode(true);
+      cancelBtn.parentNode?.replaceChild(newCancelBtn, cancelBtn);
+
+      // Attach new listener
+      newCancelBtn.addEventListener('click', () => {
         const submitForm = document.querySelector('[data-panel="submit"] form');
         if (submitForm instanceof HTMLFormElement) {
           submitForm.reset();
 
-          const originalText = cancelBtn.textContent;
-          cancelBtn.textContent = 'Formulario Reiniciado';
+          const originalText = newCancelBtn.textContent;
+          newCancelBtn.textContent = 'Formulario Reiniciado';
           setTimeout(() => {
-            cancelBtn.textContent = originalText || 'Limpiar Formulario';
+            newCancelBtn.textContent = originalText || 'Limpiar Formulario';
           }, 1500);
         }
       });
@@ -63,6 +68,9 @@ const { isActive, predefinedParties } = Astro.props;
   } else {
     initCancelButton();
   }
+
+  // Re-initialize after Astro View Transitions navigation
+  document.addEventListener('astro:page-load', initCancelButton);
 </script>
 
 <style>

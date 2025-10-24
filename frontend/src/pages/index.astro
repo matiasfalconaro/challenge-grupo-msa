@@ -1,4 +1,7 @@
 ---
+// Disable prerendering for this page - it needs to handle POST requests and make API calls at runtime
+export const prerender = false;
+
 import Layout from '../layouts/Layout.astro';
 import Modal from '../components/Modal.astro';
 import MessageBanner from '../components/MessageBanner.astro';
@@ -12,6 +15,7 @@ import TabSwitchingScript from '../components/TabSwitchingScript.astro';
 import { DhondtApiService } from '../services/api';
 import { PREDEFINED_PARTIES, TABS, FORM_ACTIONS, type TabType } from '../utils/constants';
 import type { ListInput, CalculationHistoryItem, CalculationResult } from '../types/dhondt';
+import { getBackendUrl } from '../utils/env';
 
 // State variables
 let submitResult = null;
@@ -22,8 +26,9 @@ let error = null;
 let successMessage = null;
 let activeTab: TabType = TABS.SUBMIT; // Default active tab
 
-// Get backend URL for components
-const backendUrl = import.meta.env.PUBLIC_BACKEND_URL || 'http://localhost:5000';
+// Get backend URLs
+const serverBackendUrl = getBackendUrl(); // For server-side API calls (uses http://backend:5000)
+const backendUrl = import.meta.env.PUBLIC_BACKEND_URL || 'http://localhost:5000'; // For client-side use
 
 // Handle form submissions
 if (Astro.request.method === 'POST') {
@@ -50,13 +55,26 @@ if (Astro.request.method === 'POST') {
       if (lists.length === 0) {
         error = 'Por favor ingrese al menos una lista con votos';
       } else {
-        submitResult = await DhondtApiService.submitVotes(lists);
+        // Submit votes using direct backend call (server-side)
+        console.log('[SSR] Submitting votes to:', `${serverBackendUrl}/submit-votes`);
+
+        const response = await fetch(`${serverBackendUrl}/submit-votes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lists })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || 'Failed to submit votes');
+        }
+
+        submitResult = await response.json();
         successMessage = submitResult.message;
+        console.log('[SSR] Votes submitted successfully:', submitResult);
 
-        // Fetch updated aggregated votes
-        aggregatedVotes = await DhondtApiService.getAggregatedVotes();
-
-        // Switch to aggregated votes tab after successful submission
+        // Switch to history tab after successful submission
+        // Data will be loaded by the code below
         activeTab = TABS.HISTORY;
       }
     } else if (action === FORM_ACTIONS.CALCULATE_AGGREGATE) {
@@ -67,48 +85,90 @@ if (Astro.request.method === 'POST') {
         error = 'El total de escaños debe ser mayor que 0';
         activeTab = TABS.CALCULATE;
       } else {
-        aggregateResult = await DhondtApiService.calculateAggregate(totalSeats, true);
+        // Calculate using direct backend call (server-side)
+        const response = await fetch(`${serverBackendUrl}/calculate-aggregate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ total_seats: totalSeats, save_result: true })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || 'Failed to calculate aggregate');
+        }
+
+        aggregateResult = await response.json();
         successMessage = 'Cálculo completado exitosamente';
         activeTab = TABS.CALCULATE;
 
-        // Refresh calculation history after successful calculation
-        try {
-          calculationHistory = await DhondtApiService.getCalculationHistory();
-        } catch (e: any) {
-          console.error('Failed to refresh calculation history:', e.message);
-        }
+        // Calculation history will be loaded by the code below
       }
     } else if (action === FORM_ACTIONS.CLEAR_SUBMISSIONS) {
-      // Clear all submissions
-      const clearResult = await DhondtApiService.clearSubmissions();
+      // Clear all submissions using direct backend call (server-side)
+      const response = await fetch(`${serverBackendUrl}/clear-submissions`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to clear submissions');
+      }
+
+      const clearResult = await response.json();
       successMessage = clearResult.message;
-      aggregatedVotes = null;
+      // Don't set to null - let the data refresh logic below handle it
+      // This ensures the "empty state" is properly displayed
       activeTab = TABS.CLEAR;
     }
   } catch (e: any) {
-    error = `Error: ${e.message}`;
-  }
-}
+    // Enhanced error handling with backend URL context
+    console.error('[SSR] Error during form submission:', e);
 
-// Load aggregated votes on initial page load (if not already loaded)
-if (!aggregatedVotes && !error) {
-  try {
-    aggregatedVotes = await DhondtApiService.getAggregatedVotes();
-  } catch (e: any) {
-    // It's OK if there are no submissions yet
-    if (!e.message.includes('No voting submissions')) {
-      console.error('Failed to load aggregated votes:', e.message);
+    // Check if it's a fetch/network error
+    if (e.name === 'TypeError' && e.message.includes('fetch')) {
+      error = `Error de conexión: No se pudo conectar al backend en ${serverBackendUrl}. Verifica que el backend esté corriendo.`;
+    } else {
+      error = `Error: ${e.message}`;
     }
   }
 }
 
-// Load calculation history on initial page load
-if (!calculationHistory && !error) {
+// Always load aggregated votes after POST operations or on initial page load
+// This ensures data is always fresh and tabs display correctly
+// NOTE: Server-side code must use absolute URLs with the backend service URL
+if (!error) {
   try {
-    calculationHistory = await DhondtApiService.getCalculationHistory();
+    const response = await fetch(`${serverBackendUrl}/aggregated-votes`);
+    if (response.ok) {
+      aggregatedVotes = await response.json();
+      console.log('[SSR] Loaded aggregated votes:', aggregatedVotes);
+    } else {
+      const errorData = await response.json();
+      console.log('[SSR] No aggregated votes yet:', errorData.detail);
+      aggregatedVotes = null; // Explicitly set to null when no data
+    }
   } catch (e: any) {
-    // It's OK if there are no calculations yet
-    console.error('Failed to load calculation history:', e.message);
+    console.error('[SSR] Failed to load aggregated votes:', e.message);
+    aggregatedVotes = null;
+  }
+}
+
+// Always load calculation history after POST operations or on initial page load
+// This ensures the history tab always shows the latest data
+if (!error) {
+  try {
+    const response = await fetch(`${serverBackendUrl}/calculation-history?limit=20`);
+    if (response.ok) {
+      calculationHistory = await response.json();
+      console.log('[SSR] Loaded calculation history:', calculationHistory?.length || 0, 'items');
+    } else {
+      const errorData = await response.json();
+      console.log('[SSR] No calculation history yet:', errorData.detail);
+      calculationHistory = null;
+    }
+  } catch (e: any) {
+    console.error('[SSR] Failed to load calculation history:', e.message);
+    calculationHistory = null;
   }
 }
 ---
@@ -186,6 +246,9 @@ if (!calculationHistory && !error) {
       // DOM already loaded
       waitForModal();
     }
+
+    // Re-initialize after Astro View Transitions navigation
+    document.addEventListener('astro:page-load', waitForModal);
   </script>
 
   <style>

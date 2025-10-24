@@ -7,20 +7,11 @@
  * @prop {object | null} aggregatedVotes - Aggregated votes data
  */
 
-interface AggregatedParty {
-  name: string;
-  votes: number;
-}
-
-interface AggregatedVotes {
-  total_submissions: number;
-  total_votes: number;
-  aggregated_parties: AggregatedParty[];
-}
+import type { AggregatedVotesResponse } from '../types/dhondt';
 
 interface Props {
   isActive: boolean;
-  aggregatedVotes: AggregatedVotes | null;
+  aggregatedVotes: AggregatedVotesResponse | null;
 }
 
 const { isActive, aggregatedVotes } = Astro.props;

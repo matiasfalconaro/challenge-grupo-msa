@@ -34,9 +34,15 @@ export interface VotingSubmissionItem {
   submitted_at: string;
 }
 
+export interface AggregatedParty {
+  name: string;
+  votes: number;
+  seats: number; // Always 0 for aggregated data (seats not yet calculated)
+}
+
 export interface AggregatedVotesResponse {
   total_submissions: number;
-  aggregated_parties: ListResult[];
+  aggregated_parties: AggregatedParty[];
   total_votes: number;
 }
 
