@@ -101,7 +101,6 @@ class DhondtService:
         # Convert to dict
         data = calculation.model_dump()
 
-        # Prepare results as list of dicts for JSONB storage
         results = [
             {
                 'name': result['name'],
