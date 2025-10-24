@@ -114,3 +114,13 @@ class ClearSubmissionsResponse(BaseModel):
 
     message: str
     deleted_count: int
+
+
+class CalculationHistoryItem(BaseModel):
+    """Model for a calculation history record."""
+
+    id: int
+    timestamp: str
+    total_seats: int
+    total_votes: int
+    results: List[ListResult]

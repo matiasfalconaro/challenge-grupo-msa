@@ -1,0 +1,160 @@
+---
+/**
+ * CalculationResults Component
+ * Displays calculation results with table and chart
+ *
+ * @prop {object} result - D'Hondt calculation result
+ */
+
+import ResultsTable from './ResultsTable.astro';
+import ResultsChart from './ResultsChart.astro';
+import type { CalculationResult } from '../types/dhondt';
+
+interface Props {
+  result: CalculationResult;
+}
+
+const { result } = Astro.props;
+---
+
+<div class="calculation-results">
+  <h2>Resultados del Cálculo Agregado</h2>
+  <ResultsTable result={result} />
+  <ResultsChart result={result} />
+
+  {/* Save Information */}
+  <div class="save-info">
+    <div class="save-status">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+      </svg>
+      <div class="save-message">
+        <p class="save-title">Resultados Guardados Exitosamente</p>
+        {result.calculation_id && (
+          <p class="save-id">ID de Cálculo: <code>{result.calculation_id}</code></p>
+        )}
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .calculation-results {
+    animation: fadeInContent 0.4s ease-in-out;
+  }
+
+  .calculation-results h2 {
+    color: #667eea;
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+    text-align: center;
+  }
+
+  .save-info {
+    margin-top: 30px;
+    padding-top: 25px;
+    border-top: 2px solid #e0e0e0;
+  }
+
+  .save-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    padding: 20px;
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    border: 2px solid #28a745;
+    border-radius: 10px;
+    animation: slideIn 0.5s ease-out;
+  }
+
+  .save-status svg {
+    color: #28a745;
+    flex-shrink: 0;
+    animation: checkmark 0.5s ease-in-out;
+  }
+
+  .save-message {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .save-title {
+    margin: 0;
+    color: #155724;
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  .save-id {
+    margin: 0;
+    color: #155724;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .save-id code {
+    background: rgba(21, 87, 36, 0.1);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    color: #0d4421;
+  }
+
+  @keyframes checkmark {
+    0% {
+      transform: scale(0) rotate(-45deg);
+      opacity: 0;
+    }
+    50% {
+      transform: scale(1.2) rotate(0deg);
+    }
+    100% {
+      transform: scale(1) rotate(0deg);
+      opacity: 1;
+    }
+  }
+
+  @keyframes fadeInContent {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @media (max-width: 480px) {
+    .save-status {
+      flex-direction: column;
+      gap: 10px;
+      padding: 15px;
+    }
+
+    .save-title {
+      font-size: 1rem;
+      text-align: center;
+    }
+
+    .save-id {
+      font-size: 0.85rem;
+      text-align: center;
+    }
+  }
+</style>

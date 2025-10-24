@@ -36,7 +36,8 @@ class Settings(BaseSettings):
     ]
     cors_credentials: bool = True
     cors_methods: list = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-    cors_headers: list = ["Content-Type", "Authorization", "X-Request-ID"]
+    cors_headers: list = ["Content-Type", "Authorization", "X-Request-ID", "Content-Disposition"]
+    cors_expose_headers: list = ["Content-Disposition", "X-Request-ID"]
 
     class Config:
         env_file = ".env"

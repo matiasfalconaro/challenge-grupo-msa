@@ -1,0 +1,50 @@
+---
+/**
+ * SEO Component
+ * Provides comprehensive meta tags for SEO optimization
+ */
+
+interface Props {
+  title: string;
+  description?: string;
+  type?: 'website' | 'article';
+  image?: string;
+  author?: string;
+}
+
+const {
+  title,
+  description = 'Calculadora D\'Hondt para sistemas de votación proporcional. Permite el cálculo agregado de votos y la distribución de escaños.',
+  type = 'website',
+  image = '/voting.png',
+  author = 'Sistema Electoral D\'Hondt'
+} = Astro.props;
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site || Astro.url.origin);
+const imageURL = new URL(image, Astro.site || Astro.url.origin);
+---
+
+<!-- Primary Meta Tags -->
+<title>{title}</title>
+<meta name="title" content={title} />
+<meta name="description" content={description} />
+<meta name="author" content={author} />
+<link rel="canonical" href={canonicalURL.href} />
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content={type} />
+<meta property="og:url" content={canonicalURL.href} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:image" content={imageURL.href} />
+
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:url" content={canonicalURL.href} />
+<meta property="twitter:title" content={title} />
+<meta property="twitter:description" content={description} />
+<meta property="twitter:image" content={imageURL.href} />
+
+<!-- Additional SEO -->
+<meta name="robots" content="index, follow" />
+<meta name="language" content="Spanish" />

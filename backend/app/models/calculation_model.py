@@ -91,7 +91,8 @@ class Calculation(Base):
 
     def to_api_format(self) -> Dict[str, Any]:
         """
-        Convert to API format (backward compatible with old JSONB format).
+        Convert normalized database model to flat API response format.
+        Returns a dictionary with calculation metadata and nested results array.
         """
         results = [
             result.to_api_format()

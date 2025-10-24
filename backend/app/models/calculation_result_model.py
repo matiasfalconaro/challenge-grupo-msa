@@ -96,7 +96,8 @@ class CalculationResult(Base):
 
     def to_api_format(self) -> dict:
         """
-        Convert to API format (backward compatible with old JSONB format).
+        Convert normalized result to flat API format.
+        Returns a simple dictionary with party name, votes, and seats.
         """
         return {
             'name': self.party.name if self.party else 'Unknown',
