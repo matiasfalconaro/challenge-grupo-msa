@@ -1,13 +1,4 @@
----
-/**
- * TabSwitchingScript Component
- * Client-side script for handling tab navigation
- * This component should be included once at the page level
- */
----
-
 <script>
-  // Tab switching functionality
   function initTabs() {
     const tabButtons = document.querySelectorAll('.tab-button');
     const tabPanels = document.querySelectorAll('.tab-panel');
@@ -22,14 +13,11 @@
       return;
     }
 
-    // Remove existing listeners to prevent duplicates
     tabButtons.forEach(button => {
-      // Clone and replace to remove all event listeners
       const newButton = button.cloneNode(true);
       button.parentNode?.replaceChild(newButton, button);
     });
 
-    // Re-query after cloning
     const freshTabButtons = document.querySelectorAll('.tab-button');
     const freshTabPanels = document.querySelectorAll('.tab-panel');
 
@@ -38,40 +26,38 @@
         const targetTab = button.getAttribute('data-tab');
         console.log('[TabSwitching] Tab clicked:', targetTab);
 
-        // Remove active class from all buttons and panels
+        if (!targetTab) {
+          console.warn('[TabSwitching] Tab button missing data-tab attribute');
+          return;
+        }
+
         freshTabButtons.forEach(btn => btn.classList.remove('active'));
         freshTabPanels.forEach(panel => panel.classList.remove('active'));
 
-        // Add active class to clicked button and corresponding panel
         button.classList.add('active');
         const targetPanel = document.querySelector(`[data-panel="${targetTab}"]`);
         if (targetPanel) {
           targetPanel.classList.add('active');
         }
 
-        // Save active tab to sessionStorage
         sessionStorage.setItem('activeTab', targetTab);
       });
     });
 
-    // Restore active tab from sessionStorage if no server-side tab is set
     const savedTab = sessionStorage.getItem('activeTab');
     if (savedTab && !document.querySelector('.tab-button.active')) {
-      const savedButton = document.querySelector(`[data-tab="${savedTab}"]`);
+      const savedButton = document.querySelector(`[data-tab="${savedTab}"]`) as HTMLElement | null;
       if (savedButton) {
         savedButton.click();
       }
     }
   }
 
-  // Initialize tabs when DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initTabs);
   } else {
     initTabs();
   }
 
-  // Re-initialize tabs after Astro View Transitions navigation
-  // This ensures event listeners are re-attached after form submissions
   document.addEventListener('astro:page-load', initTabs);
 </script>

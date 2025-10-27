@@ -1,14 +1,4 @@
 ---
-/**
- * HistoryTab Component
- * Displays the system history including aggregated votes and calculation history
- *
- * @prop {boolean} isActive - Whether this tab is currently active
- * @prop {object | null} aggregatedVotes - Aggregated votes data
- * @prop {array | null} calculationHistory - Calculation history data
- * @prop {string} backendUrl - Backend URL for downloading reports
- */
-
 import AggregatedVotesDisplay from './AggregatedVotesDisplay.astro';
 import CalculationHistoryTable from './CalculationHistoryTable.astro';
 import type { CalculationHistoryItem, AggregatedVotesResponse } from '../types/dhondt';

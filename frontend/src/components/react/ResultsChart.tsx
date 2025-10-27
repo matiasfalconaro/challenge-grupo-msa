@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Chart, registerables } from 'chart.js';
 import type { CalculationResult } from '../../types/dhondt';
 
-// Register Chart.js components
+
 Chart.register(...registerables);
 
 interface Props {
@@ -16,12 +16,10 @@ export default function ResultsChart({ result }: Props) {
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    // Destroy existing chart if it exists
     if (chartRef.current) {
       chartRef.current.destroy();
     }
 
-    // Create new chart
     const ctx = canvasRef.current.getContext('2d');
     if (ctx) {
       chartRef.current = new Chart(ctx, {
@@ -85,7 +83,6 @@ export default function ResultsChart({ result }: Props) {
       });
     }
 
-    // Cleanup on unmount
     return () => {
       if (chartRef.current) {
         chartRef.current.destroy();

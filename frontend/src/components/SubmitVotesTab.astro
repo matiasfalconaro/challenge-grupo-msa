@@ -1,12 +1,4 @@
 ---
-/**
- * SubmitVotesTab Component
- * Form for submitting votes to the database
- *
- * @prop {boolean} isActive - Whether this tab is currently active
- * @prop {string[]} predefinedParties - List of predefined party names
- */
-
 import PartyInput from './PartyInput.astro';
 
 interface Props {
@@ -39,15 +31,12 @@ const { isActive, predefinedParties } = Astro.props;
 </div>
 
 <script>
-  // Cancel button functionality for "Enviar Votos" form
   function initCancelButton() {
     const cancelBtn = document.getElementById('cancelSubmitBtn');
     if (cancelBtn) {
-      // Remove existing listener to prevent duplicates
       const newCancelBtn = cancelBtn.cloneNode(true);
       cancelBtn.parentNode?.replaceChild(newCancelBtn, cancelBtn);
 
-      // Attach new listener
       newCancelBtn.addEventListener('click', () => {
         const submitForm = document.querySelector('[data-panel="submit"] form');
         if (submitForm instanceof HTMLFormElement) {

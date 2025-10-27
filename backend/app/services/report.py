@@ -23,11 +23,10 @@ class ReportService:
         try:
             logger.info("Starting comprehensive report generation")
 
-            # Create Excel writer in memory
             output = BytesIO()
 
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                # Sheet 1: Calculation History (main report)
+                # Sheet 1
                 df_calculations = self._get_calculation_history_df()
                 df_calculations.to_excel(
                     writer,
@@ -36,7 +35,7 @@ class ReportService:
                 )
                 logger.info(f"Added Calculation History sheet with {len(df_calculations)} rows")
 
-                # Sheet 2: Detailed Results (all calculation results)
+                # Sheet 2
                 df_results = self._get_detailed_results_df()
                 df_results.to_excel(
                     writer,
@@ -45,7 +44,7 @@ class ReportService:
                 )
                 logger.info(f"Added Detailed Results sheet with {len(df_results)} rows")
 
-                # Sheet 3: Party Performance Summary
+                # Sheet 3
                 df_party_summary = self._get_party_summary_df()
                 df_party_summary.to_excel(
                     writer,
@@ -54,7 +53,7 @@ class ReportService:
                 )
                 logger.info(f"Added Party Performance sheet with {len(df_party_summary)} rows")
 
-                # Sheet 4: Voting Submissions
+                # Sheet 4
                 df_submissions = self._get_voting_submissions_df()
                 df_submissions.to_excel(
                     writer,
@@ -63,7 +62,7 @@ class ReportService:
                 )
                 logger.info(f"Added Voting Submissions sheet with {len(df_submissions)} rows")
 
-                # Sheet 5: Statistics & Summary
+                # Sheet 5
                 df_stats = self._get_statistics_df()
                 df_stats.to_excel(
                     writer,
@@ -72,10 +71,8 @@ class ReportService:
                 )
                 logger.info("Added Statistics sheet")
 
-                # Apply formatting to all sheets
                 self._apply_formatting(writer)
 
-            # Reset pointer to beginning of stream
             output.seek(0)
 
             logger.info("Comprehensive report generated successfully")
@@ -116,12 +113,10 @@ class ReportService:
 
         df = pd.DataFrame(results)
 
-        # Split timestamp into date and time (remove timezone info for Excel compatibility)
         df['timestamp'] = pd.to_datetime(df['timestamp']).dt.tz_localize(None)
         df['date'] = df['timestamp'].dt.date
         df['time'] = df['timestamp'].dt.time
 
-        # Rename and reorder columns
         df = df[[
             'calculation_id', 'date', 'time', 'total_seats', 'total_votes',
             'parties_count', 'parties_with_seats', 'max_seats_won',
@@ -354,7 +349,6 @@ class ReportService:
         df = pd.DataFrame(results)
         df.columns = ['Metric', 'Value']
 
-        # Add report generation timestamp
         timestamp_row = pd.DataFrame({
             'Metric': ['Report Generated At'],
             'Value': [datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')]
@@ -371,11 +365,9 @@ class ReportService:
             from openpyxl.styles import Font, PatternFill, Alignment
             from openpyxl.utils import get_column_letter
 
-            # Format each sheet
             for sheet_name in writer.sheets:
                 worksheet = writer.sheets[sheet_name]
 
-                # Style header row
                 header_fill = PatternFill(start_color="366092",
                                          end_color="366092",
                                          fill_type="solid")
@@ -387,7 +379,6 @@ class ReportService:
                     cell.alignment = Alignment(horizontal="center",
                                               vertical="center")
 
-                # Auto-adjust column widths
                 for column in worksheet.columns:
                     max_length = 0
                     column_letter = get_column_letter(column[0].column)
@@ -402,7 +393,6 @@ class ReportService:
                     adjusted_width = min(max_length + 2, 50)
                     worksheet.column_dimensions[column_letter].width = adjusted_width
 
-                # Freeze header row
                 worksheet.freeze_panes = 'A2'
 
             logger.info("Applied formatting to all sheets")
@@ -423,7 +413,6 @@ class ReportService:
             logger.info(f"Generating custom report with filters: "
                        f"start={start_date}, end={end_date}, party={party_filter}")
 
-            # Build dynamic query based on filters
             where_clauses = []
             params = {}
 
@@ -465,7 +454,6 @@ class ReportService:
 
             df = pd.DataFrame(results)
 
-            # Create Excel in memory
             output = BytesIO()
 
             with pd.ExcelWriter(output, engine='openpyxl') as writer:

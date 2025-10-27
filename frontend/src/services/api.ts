@@ -7,20 +7,14 @@ import type {
   CalculationHistoryItem
 } from '../types/dhondt';
 
-// Use Astro API endpoints instead of direct backend calls
-// This provides better security and CORS management
 const getApiUrl = () => {
-  // Always use relative API endpoints which will be proxied by Astro
-  return '/api';
+  // Backend serves endpoints at root level, not under /api
+  return '';
 };
 
 const API_URL = getApiUrl();
 
 export class DhondtApiService {
-
-  // AGGREGATE VOTING API METHODS
-
-  //Submit voting data to database for aggregation.
   static async submitVotes(lists: ListInput[]): Promise<VotingSubmissionResponse> {
     const response = await fetch(`${API_URL}/submit-votes`, {
       method: 'POST',
@@ -38,7 +32,6 @@ export class DhondtApiService {
     return await response.json();
   }
 
-  //Get aggregated votes without calculating seats.
   static async getAggregatedVotes(): Promise<AggregatedVotesResponse> {
     const response = await fetch(`${API_URL}/aggregated-votes`);
 
@@ -50,7 +43,6 @@ export class DhondtApiService {
     return await response.json();
   }
 
-  //Calculate D'Hondt on aggregate data from database.
   static async calculateAggregate(
     totalSeats: number,
     saveResult: boolean = true
@@ -74,7 +66,6 @@ export class DhondtApiService {
     return await response.json();
   }
 
-  //Clear all voting submissions from database.
   static async clearSubmissions(): Promise<ClearSubmissionsResponse> {
     const response = await fetch(`${API_URL}/clear-submissions`, {
       method: 'DELETE',
@@ -88,7 +79,6 @@ export class DhondtApiService {
     return await response.json();
   }
 
-  //Get calculation history.
   static async getCalculationHistory(limit: number = 20): Promise<CalculationHistoryItem[]> {
     const response = await fetch(`${API_URL}/calculation-history?limit=${limit}`);
 

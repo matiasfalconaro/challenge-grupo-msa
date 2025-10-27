@@ -1,11 +1,4 @@
 ---
-/**
- * TabNavigation Component
- * Displays navigation tabs for switching between different sections
- *
- * @prop {TabType} activeTab - Currently active tab identifier
- */
-
 import type { TabType } from '../utils/constants';
 
 interface Props {
@@ -94,7 +87,6 @@ const tabs = [
     white-space: nowrap;
   }
 
-  /* Responsive Design */
   @media (max-width: 768px) {
     .tabs-nav {
       flex-direction: column;

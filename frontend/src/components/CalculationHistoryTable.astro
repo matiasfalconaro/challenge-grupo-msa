@@ -1,12 +1,4 @@
 ---
-/**
- * CalculationHistoryTable Component
- * Displays the history of D'Hondt calculations
- *
- * @prop {array} calculationHistory - Array of calculation history items
- * @prop {string} backendUrl - Backend URL for downloading reports
- */
-
 import type { CalculationHistoryItem } from '../types/dhondt';
 import { formatDate, formatTime } from '../utils/formatting';
 
@@ -76,7 +68,6 @@ const { calculationHistory, backendUrl } = Astro.props;
 </div>
 
 <script define:vars={{ backendUrl }}>
-  // Download report functionality
   function initDownloadButton() {
     const downloadBtn = document.getElementById('downloadReportBtn');
     if (downloadBtn) {

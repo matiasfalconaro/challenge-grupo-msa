@@ -1,5 +1,3 @@
-//Type definitions for D'Hondt calculation system.
-
 export interface ListInput {
   name: string;
   votes: number;
@@ -17,8 +15,6 @@ export interface CalculationResult {
   results: ListResult[];
   calculation_id?: string | null;
 }
-
-// Types for aggregate voting workflow
 
 export interface VotingSubmissionResponse {
   message: string;

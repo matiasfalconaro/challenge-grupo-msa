@@ -43,6 +43,7 @@ class RawQueryExecutor:
         finally:
             session.close()
 
+
     def execute_query(self,
                      sql: str,
                      params: Optional[Dict[str, Any]] = None,
@@ -104,6 +105,7 @@ class RawQueryExecutor:
         finally:
             if manage_session:
                 session.close()
+
 
     def execute_update(self,
                        sql: str,
@@ -168,6 +170,7 @@ class RawQueryExecutor:
             if manage_session:
                 session.close()
 
+
     def execute_many(self,
                     sql: str,
                     params_list: List[Dict[str, Any]],
@@ -229,6 +232,7 @@ class RawQueryExecutor:
         finally:
             if manage_session:
                 session.close()
+
 
     def execute_transaction(self,
                            operations: List[Dict[str, Any]]) -> List[Any]:

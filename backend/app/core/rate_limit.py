@@ -4,8 +4,8 @@ from slowapi.util import get_remote_address
 
 limiter = Limiter(
     key_func=get_remote_address,
-    default_limits=["100/hour"],  # Default: 100 requests per hour per IP
-    storage_uri="memory://",  # Use in-memory storage (for Redis: "redis://localhost:6379")
+    default_limits=["100/hour"],
+    storage_uri="memory://",
 )
 
 

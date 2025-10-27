@@ -1,10 +1,3 @@
-/**
- * Application constants
- */
-
-/**
- * Predefined parties (Lista A through Lista J)
- */
 export const PREDEFINED_PARTIES = [
   'Lista A',
   'Lista B',
@@ -18,9 +11,6 @@ export const PREDEFINED_PARTIES = [
   'Lista J'
 ] as const;
 
-/**
- * Tab identifiers
- */
 export const TABS = {
   SUBMIT: 'submit',
   HISTORY: 'history',
@@ -28,14 +18,8 @@ export const TABS = {
   CLEAR: 'clear'
 } as const;
 
-/**
- * Tab type - union of all valid tab values
- */
 export type TabType = typeof TABS[keyof typeof TABS];
 
-/**
- * Form actions
- */
 export const FORM_ACTIONS = {
   SUBMIT_VOTES: 'submit-votes',
   CALCULATE_AGGREGATE: 'calculate-aggregate',

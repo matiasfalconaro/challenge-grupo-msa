@@ -17,30 +17,26 @@ import { PREDEFINED_PARTIES, TABS, FORM_ACTIONS, type TabType } from '../utils/c
 import type { ListInput, CalculationHistoryItem, CalculationResult } from '../types/dhondt';
 import { getBackendUrl } from '../utils/env';
 
-// State variables
+
 let submitResult = null;
 let aggregateResult: CalculationResult | null = null;
 let aggregatedVotes = null;
 let calculationHistory: CalculationHistoryItem[] | null = null;
 let error = null;
 let successMessage = null;
-let activeTab: TabType = TABS.SUBMIT; // Default active tab
+let activeTab: TabType = TABS.SUBMIT;
 
-// Get backend URLs
 const serverBackendUrl = getBackendUrl(); // For server-side API calls (uses http://backend:5000)
-const backendUrl = import.meta.env.PUBLIC_BACKEND_URL || 'http://localhost:5000'; // For client-side use
+const backendUrl = import.meta.env.PUBLIC_BACKEND_URL || 'http://localhost:5000';
 
-// Handle form submissions
 if (Astro.request.method === 'POST') {
   try {
     const formData = await Astro.request.formData();
     const action = formData.get('action') as string;
 
     if (action === FORM_ACTIONS.SUBMIT_VOTES) {
-      // Submit votes to database for aggregation
       const lists: ListInput[] = [];
 
-      // Iterate through predefined parties
       for (const partyName of PREDEFINED_PARTIES) {
         const votes = formData.get(`party_${partyName}`) as string;
 
@@ -55,7 +51,6 @@ if (Astro.request.method === 'POST') {
       if (lists.length === 0) {
         error = 'Por favor ingrese al menos una lista con votos';
       } else {
-        // Submit votes using direct backend call (server-side)
         console.log('[SSR] Submitting votes to:', `${serverBackendUrl}/submit-votes`);
 
         const response = await fetch(`${serverBackendUrl}/submit-votes`, {
@@ -73,19 +68,15 @@ if (Astro.request.method === 'POST') {
         successMessage = submitResult.message;
         console.log('[SSR] Votes submitted successfully:', submitResult);
 
-        // Switch to history tab after successful submission
-        // Data will be loaded by the code below
         activeTab = TABS.HISTORY;
       }
     } else if (action === FORM_ACTIONS.CALCULATE_AGGREGATE) {
-      // Calculate D'Hondt on aggregate data
       const totalSeats = parseInt(formData.get('totalSeats') as string);
 
       if (totalSeats <= 0) {
         error = 'El total de escaños debe ser mayor que 0';
         activeTab = TABS.CALCULATE;
       } else {
-        // Calculate using direct backend call (server-side)
         const response = await fetch(`${serverBackendUrl}/calculate-aggregate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -101,10 +92,8 @@ if (Astro.request.method === 'POST') {
         successMessage = 'Cálculo completado exitosamente';
         activeTab = TABS.CALCULATE;
 
-        // Calculation history will be loaded by the code below
       }
     } else if (action === FORM_ACTIONS.CLEAR_SUBMISSIONS) {
-      // Clear all submissions using direct backend call (server-side)
       const response = await fetch(`${serverBackendUrl}/clear-submissions`, {
         method: 'DELETE'
       });
@@ -116,15 +105,11 @@ if (Astro.request.method === 'POST') {
 
       const clearResult = await response.json();
       successMessage = clearResult.message;
-      // Don't set to null - let the data refresh logic below handle it
-      // This ensures the "empty state" is properly displayed
       activeTab = TABS.CLEAR;
     }
   } catch (e: any) {
-    // Enhanced error handling with backend URL context
     console.error('[SSR] Error during form submission:', e);
 
-    // Check if it's a fetch/network error
     if (e.name === 'TypeError' && e.message.includes('fetch')) {
       error = `Error de conexión: No se pudo conectar al backend en ${serverBackendUrl}. Verifica que el backend esté corriendo.`;
     } else {
@@ -133,9 +118,6 @@ if (Astro.request.method === 'POST') {
   }
 }
 
-// Always load aggregated votes after POST operations or on initial page load
-// This ensures data is always fresh and tabs display correctly
-// NOTE: Server-side code must use absolute URLs with the backend service URL
 if (!error) {
   try {
     const response = await fetch(`${serverBackendUrl}/aggregated-votes`);
@@ -153,8 +135,6 @@ if (!error) {
   }
 }
 
-// Always load calculation history after POST operations or on initial page load
-// This ensures the history tab always shows the latest data
 if (!error) {
   try {
     const response = await fetch(`${serverBackendUrl}/calculation-history?limit=20`);
@@ -221,38 +201,30 @@ if (!error) {
 
   {/* Modal Logic */}
   <script is:inline define:vars={{ hasResult: !!aggregateResult }}>
-    // Wait for DOM and modal functions to be ready
     function waitForModal() {
       if (typeof window.initModal === 'function' && typeof window.openModal === 'function') {
-        // Initialize modal
         window.initModal('resultsModal');
 
-        // Auto-open modal if results exist
         if (hasResult) {
           setTimeout(() => {
             window.openModal('resultsModal');
           }, 100);
         }
       } else {
-        // Retry after a short delay if functions not ready yet
         setTimeout(waitForModal, 50);
       }
     }
 
-    // Start waiting for modal functions when DOM is ready
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', waitForModal);
     } else {
-      // DOM already loaded
       waitForModal();
     }
 
-    // Re-initialize after Astro View Transitions navigation
     document.addEventListener('astro:page-load', waitForModal);
   </script>
 
   <style>
-    /* Tabs Container */
     .tabs-container {
       background: white;
       border-radius: 8px;
@@ -260,13 +232,11 @@ if (!error) {
       overflow: hidden;
     }
 
-    /* Tab Content */
     .tabs-content {
       position: relative;
       min-height: 400px;
     }
 
-    /* Responsive Design */
     @media (max-width: 768px) {
       .tabs-content {
         min-height: 300px;

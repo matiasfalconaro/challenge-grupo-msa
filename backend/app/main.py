@@ -27,11 +27,9 @@ async def lifespan(app: FastAPI):
     """
     logger.info("Starting application...")
     try:
-        # Initialize database engine
         engine = get_engine()
         logger.info("Database engine initialized successfully")
 
-        # Test database connection
         if test_connection():
             logger.info("Database connection test passed")
         else:

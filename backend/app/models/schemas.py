@@ -9,7 +9,6 @@ from pydantic import (BaseModel,
 class ListInput(BaseModel):
     """Input model for a political list with votes."""
 
-    # Predefined valid party names
     VALID_PARTIES: ClassVar[List[str]] = [
         'Lista A',
         'Lista B',
@@ -32,7 +31,6 @@ class ListInput(BaseModel):
         """
         Validate that the party name is one of the predefined registered parties.
         """
-        # Strip whitespace
         name = v.strip()
 
         if not name:

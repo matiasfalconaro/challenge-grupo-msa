@@ -60,7 +60,6 @@ class CalculationResult(Base):
         back_populates="calculation_results"
     )
 
-    # Table-level constraints and indexes
     __table_args__ = (
         CheckConstraint('votes >= 0', name='calculation_results_votes_check'),
         CheckConstraint('seats >= 0', name='calculation_results_seats_check'),

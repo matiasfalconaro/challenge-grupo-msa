@@ -110,7 +110,6 @@ def get_calculation_history(limit: int = 50) -> List[Dict[str, Any]]:
         if limit <= 0:
             raise ValueError("limit must be positive")
 
-        # Query calculations with eager loading of related data
         stmt = (
             select(Calculation)
             .order_by(desc(Calculation.timestamp))
@@ -121,10 +120,8 @@ def get_calculation_history(limit: int = 50) -> List[Dict[str, Any]]:
 
         result_list = []
         for calc in calculations:
-            # Use the model's to_api_format method to get backward-compatible format
-            # This method joins with calculation_results and parties automatically
             calc_dict = calc.to_api_format()
-            calc_dict['id'] = calc.id  # Add id field for history display
+            calc_dict['id'] = calc.id
             result_list.append(calc_dict)
 
         logger.info(f"Retrieved {len(result_list)} calculation records from normalized schema")
@@ -186,9 +183,8 @@ def get_calculation_by_id(calculation_id: int) -> Optional[Dict[str, Any]]:
         if calculation is None:
             return None
 
-        # Use to_api_format to get backward-compatible format with results array
         result = calculation.to_api_format()
-        result['id'] = calculation.id  # Add ID to result
+        result['id'] = calculation.id
 
         return result
 
@@ -240,7 +236,7 @@ def insert_voting_submissions(submissions: List[Dict[str, Any]]) -> List[int]:
             )
 
             db.add(new_submission)
-            db.flush()  # Get the submission ID
+            db.flush()
             submission_ids.append(new_submission.id)
 
         db.commit()
@@ -298,7 +294,6 @@ def get_aggregated_votes() -> Dict[str, int]:
     db = SessionLocal()
 
     try:
-        # Use SQLAlchemy to join with Party and group by party name, sum votes
         aggregated = (
             db.query(
                 Party.name,
@@ -309,7 +304,6 @@ def get_aggregated_votes() -> Dict[str, int]:
             .all()
         )
 
-        # Convert to dictionary
         result = {party_name: int(total_votes) for party_name, total_votes in aggregated}
 
         logger.info(f"Aggregated votes for {len(result)} parties from database")

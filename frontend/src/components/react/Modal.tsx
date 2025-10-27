@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 
+
 interface Props {
   id: string;
   children: ReactNode;
@@ -15,21 +16,18 @@ export default function Modal({ id, children, isOpen = false, onClose }: Props) 
   }, [isOpen]);
 
   useEffect(() => {
-    // Handle body scroll
     if (active) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
     }
 
-    // Cleanup on unmount
     return () => {
       document.body.style.overflow = '';
     };
   }, [active]);
 
   useEffect(() => {
-    // Handle Escape key
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && active) {
         handleClose();
