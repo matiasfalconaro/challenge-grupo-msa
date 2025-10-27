@@ -5,7 +5,6 @@ CREATE TABLE IF NOT EXISTS parties (
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_parties_name ON parties (name);
 CREATE INDEX IF NOT EXISTS idx_parties_created_at ON parties (created_at);
 
 CREATE TABLE IF NOT EXISTS calculations (
@@ -16,7 +15,6 @@ CREATE TABLE IF NOT EXISTS calculations (
 );
 
 CREATE INDEX IF NOT EXISTS idx_calculations_timestamp ON calculations (timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_calculations_total_seats ON calculations (total_seats);
 
 CREATE TABLE IF NOT EXISTS voting_submissions (
     id SERIAL PRIMARY KEY,
@@ -30,8 +28,11 @@ CREATE TABLE IF NOT EXISTS voting_submissions (
         ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_voting_submissions_party_id ON voting_submissions (party_id);
-CREATE INDEX IF NOT EXISTS idx_voting_submissions_submitted_at ON voting_submissions (submitted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_voting_submissions_party_date 
+ON voting_submissions (party_id, submitted_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_voting_submissions_date_votes 
+ON voting_submissions (submitted_at DESC, votes DESC);
 
 CREATE TABLE IF NOT EXISTS calculation_results (
     id SERIAL PRIMARY KEY,
@@ -54,11 +55,10 @@ CREATE TABLE IF NOT EXISTS calculation_results (
     CONSTRAINT uq_calculation_party UNIQUE (calculation_id, party_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_calculation_results_calculation_id ON calculation_results (calculation_id);
-CREATE INDEX IF NOT EXISTS idx_calculation_results_party_id ON calculation_results (party_id);
-CREATE INDEX IF NOT EXISTS idx_calculation_results_calc_party ON calculation_results (calculation_id, party_id);
-CREATE INDEX IF NOT EXISTS idx_calculation_results_seats ON calculation_results (seats);
-
+CREATE INDEX IF NOT EXISTS idx_calculation_results_seats ON calculation_results (seats DESC);
+CREATE INDEX IF NOT EXISTS idx_calculation_results_votes ON calculation_results (votes DESC);
+CREATE INDEX IF NOT EXISTS idx_calculation_results_calc_seats 
+ON calculation_results (calculation_id, seats DESC);
 
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
