@@ -160,21 +160,18 @@ const { id } = Astro.props;
     const backdrop = modal.querySelector('.modal-backdrop');
     const closeBtn = modal.querySelector('.modal-close');
 
-    // Close on backdrop click
     if (backdrop) {
       backdrop.addEventListener('click', () => {
         closeModal(modalId);
       });
     }
 
-    // Close on close button click
     if (closeBtn) {
       closeBtn.addEventListener('click', () => {
         closeModal(modalId);
       });
     }
 
-    // Close on Escape key
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && modal.classList.contains('active')) {
         closeModal(modalId);
@@ -186,7 +183,7 @@ const { id } = Astro.props;
     const modal = document.getElementById(modalId);
     if (modal) {
       modal.classList.add('active');
-      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+      document.body.style.overflow = 'hidden';
     }
   }
 
@@ -194,11 +191,10 @@ const { id } = Astro.props;
     const modal = document.getElementById(modalId);
     if (modal) {
       modal.classList.remove('active');
-      document.body.style.overflow = ''; // Restore scrolling
+      document.body.style.overflow = '';
     }
   }
 
-  // Export functions to global scope for use in other scripts
   window.openModal = openModal;
   window.closeModal = closeModal;
   window.initModal = initModal;

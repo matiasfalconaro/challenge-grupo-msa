@@ -54,7 +54,6 @@ class Party(Base):
         cascade="all, delete-orphan"
     )
 
-    # Table-level constraints and indexes
     __table_args__ = (
         Index('idx_parties_name', 'name', unique=True),
         Index('idx_parties_created_at', 'created_at'),

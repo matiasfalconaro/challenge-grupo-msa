@@ -8,9 +8,9 @@ from app.core.config import get_settings
 from app.core.logging import (setup_logging,
                               get_logger)
 from app.core.rate_limit import limiter
-from app.database import (init_connection_pool,
+from app.database import (get_engine,
                           test_connection,
-                          close_connection_pool,
+                          dispose_engine,
                           init_db)
 from app.routes import api_router
 from app.middleware.request_id import RequestIDMiddleware
@@ -27,16 +27,14 @@ async def lifespan(app: FastAPI):
     """
     logger.info("Starting application...")
     try:
-        pool = init_connection_pool()
-        if pool is not None:
-            if test_connection():
-                logger.info("Database connection pool established successfully")
-            else:
-                logger.error("Database connection test failed")
-                raise ConnectionError("Failed to connect to database")
+        engine = get_engine()
+        logger.info("Database engine initialized successfully")
+
+        if test_connection():
+            logger.info("Database connection test passed")
         else:
-            logger.error("Database connection pool initialization failed")
-            raise ConnectionError("Failed to initialize database connection pool")
+            logger.error("Database connection test failed")
+            raise ConnectionError("Failed to connect to database")
 
         logger.info("Initializing database schema...")
         init_db()
@@ -50,8 +48,8 @@ async def lifespan(app: FastAPI):
 
     logger.info("Shutting down application...")
     try:
-        close_connection_pool()
-        logger.info("Database connection pool closed successfully")
+        dispose_engine()
+        logger.info("Database engine disposed and connections closed successfully")
     except Exception as e:
         logger.error(f"Error during shutdown: {e}", exc_info=True)
 
@@ -81,6 +79,7 @@ def create_application() -> FastAPI:
         allow_credentials=settings.cors_credentials,
         allow_methods=settings.cors_methods,
         allow_headers=settings.cors_headers,
+        expose_headers=settings.cors_expose_headers,
     )
 
     app.include_router(api_router)

@@ -56,16 +56,13 @@ class Calculation(Base):
         "CalculationResult",
         back_populates="calculation",
         cascade="all, delete-orphan",
-        lazy="selectin"  # Eager loading for better performance
+        lazy="selectin"
     )
 
-    # Table-level constraints
     __table_args__ = (
         CheckConstraint('total_seats > 0', name='calculations_total_seats_check'),
         CheckConstraint('total_votes >= 0', name='calculations_total_votes_check'),
-        # Index on timestamp for efficient sorting (DESC order for most recent first)
         Index('idx_calculations_timestamp', 'timestamp', postgresql_ops={'timestamp': 'DESC'}),
-        # Index on total_seats for filtering/sorting
         Index('idx_calculations_total_seats', 'total_seats'),
     )
 
@@ -91,7 +88,8 @@ class Calculation(Base):
 
     def to_api_format(self) -> Dict[str, Any]:
         """
-        Convert to API format (backward compatible with old JSONB format).
+        Convert normalized database model to flat API response format.
+        Returns a dictionary with calculation metadata and nested results array.
         """
         results = [
             result.to_api_format()

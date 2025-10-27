@@ -13,7 +13,7 @@ from app.models.sql_models import Base
 
 logger = get_logger(__name__)
 
-# Global engine and session factory
+
 _engine: Engine | None = None
 _SessionLocal: sessionmaker | None = None
 
@@ -28,17 +28,16 @@ def get_engine() -> Engine:
         settings = get_settings()
 
         try:
-            # Create engine with connection pooling
             _engine = create_engine(
                 settings.database_url,
                 poolclass=QueuePool,
-                pool_size=10,               # Number of connections to keep open
-                max_overflow=20,            # Max additional connections beyond pool_size
-                pool_timeout=30,            # Seconds to wait for connection from pool
-                pool_recycle=3600,          # Recycle connections after 1 hour
-                pool_pre_ping=True,         # Test connections before using them
-                echo=False,                 # Set to True for SQL logging (debug only)
-                future=True,                # Use SQLAlchemy 2.0 style
+                pool_size=10,
+                max_overflow=20,
+                pool_timeout=30,
+                pool_recycle=3600,
+                pool_pre_ping=True,
+                echo=False,
+                future=True,
             )
 
             logger.info(
@@ -66,13 +65,12 @@ def get_session_factory() -> sessionmaker:
     if _SessionLocal is None:
         engine = get_engine()
 
-        # Create session factory
         _SessionLocal = sessionmaker(
             bind=engine,
-            autocommit=False,       # Manual commit required
-            autoflush=False,        # Manual flush required
-            expire_on_commit=True,  # Expire objects after commit
-            future=True             # Use SQLAlchemy 2.0 style
+            autocommit=False,
+            autoflush=False,
+            expire_on_commit=True,
+            future=True
         )
 
         logger.info("SQLAlchemy session factory created")

@@ -10,10 +10,14 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/react": "^4.4.0",
     "astro": "^4.0.0",
-    "chart.js": "^4.4.0"
+    "chart.js": "^4.4.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@astrojs/node": "^8.0.0"
+    "@astrojs/node": "^8.0.0",
+    "@types/node": "^24.9.1"
   }
 }

@@ -1,0 +1,53 @@
+---
+interface Props {
+  error?: string | null;
+  successMessage?: string | null;
+}
+
+const { error, successMessage } = Astro.props;
+---
+
+{error && (
+  <div class="message-banner error">
+    {error}
+  </div>
+)}
+
+{successMessage && (
+  <div class="message-banner success">
+    {successMessage}
+  </div>
+)}
+
+<style>
+  .message-banner {
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    border-left: 4px solid;
+    animation: slideIn 0.3s ease-out;
+  }
+
+  .message-banner.success {
+    background-color: #d4edda;
+    color: #155724;
+    border-color: #28a745;
+  }
+
+  .message-banner.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-color: #dc3545;
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+</style>

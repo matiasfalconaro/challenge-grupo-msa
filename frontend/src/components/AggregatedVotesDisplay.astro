@@ -1,0 +1,92 @@
+---
+import { formatNumber, formatPercentage } from '../utils/formatting';
+import type { AggregatedVotesResponse } from '../types/dhondt';
+
+interface Props {
+  aggregatedVotes: AggregatedVotesResponse;
+}
+
+const { aggregatedVotes } = Astro.props;
+---
+
+<div class="history-subsection">
+  <h4>📊 Estado Actual de Votos Agregados</h4>
+  <div class="aggregate-summary">
+    <p>
+      <strong>{aggregatedVotes.total_submissions}</strong> submissions registradas |
+      <strong>{formatNumber(aggregatedVotes.total_votes)}</strong> votos totales
+    </p>
+  </div>
+
+  <table class="compact-table">
+    <thead>
+      <tr>
+        <th>Partido</th>
+        <th>Votos</th>
+        <th>%</th>
+      </tr>
+    </thead>
+    <tbody>
+      {aggregatedVotes.aggregated_parties.map((party) => (
+        <tr>
+          <td><strong>{party.name}</strong></td>
+          <td>{formatNumber(party.votes)}</td>
+          <td>{formatPercentage(party.votes, aggregatedVotes.total_votes)}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+<style>
+  .history-subsection {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+  }
+
+  .history-subsection h4 {
+    color: #667eea;
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+  }
+
+  .aggregate-summary {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    border-left: 4px solid #667eea;
+  }
+
+  .aggregate-summary p {
+    margin: 0;
+    font-size: 1rem;
+    color: #333;
+  }
+
+  .compact-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+  }
+
+  .compact-table th,
+  .compact-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .compact-table th {
+    background-color: #667eea;
+    color: white;
+    font-weight: bold;
+  }
+
+  .compact-table tr:hover {
+    background-color: #f9f9f9;
+  }
+</style>

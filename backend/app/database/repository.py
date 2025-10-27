@@ -6,55 +6,16 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import (select,
                         desc,
-                        func)
+                        func)   
 
 from app.models.calculation_model import Calculation
 from app.models.party_model import Party
 from app.models.calculation_result_model import CalculationResult
 from app.models.voting_submission_model import VotingSubmission
-from app.database.session import (get_engine,
-                                 get_session_factory,
-                                 dispose_engine,
-                                 test_connection as test_db_connection,
-                                 init_db)
+from app.database.session import get_session_factory
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
-
-
-# Backward compatibility: expose session functions with old names
-def init_connection_pool() -> bool:
-    """
-    Initialize database connection (SQLAlchemy engine).
-    """
-    try:
-        get_engine()
-        return True
-    except Exception as e:
-        logger.error(f"Failed to initialize database connection: {e}", exc_info=True)
-        return False
-
-
-def get_connection_pool():
-    """
-    Get database engine (backward compatibility with old psycopg2 code).
-    """
-    try:
-        return get_engine()
-    except Exception:
-        return None
-
-
-def close_connection_pool():
-    """Close all database connections."""
-    dispose_engine()
-
-
-def test_connection() -> bool:
-    """
-    Test database connection.
-    """
-    return test_db_connection()
 
 
 def insert_calculation(total_seats: int, total_votes: int, results: List[Dict[str, Any]]) -> int:
@@ -149,7 +110,6 @@ def get_calculation_history(limit: int = 50) -> List[Dict[str, Any]]:
         if limit <= 0:
             raise ValueError("limit must be positive")
 
-        # Query calculations with eager loading of related data
         stmt = (
             select(Calculation)
             .order_by(desc(Calculation.timestamp))
@@ -160,9 +120,8 @@ def get_calculation_history(limit: int = 50) -> List[Dict[str, Any]]:
 
         result_list = []
         for calc in calculations:
-            # Use the model's to_api_format method to get backward-compatible format
-            # This method joins with calculation_results and parties automatically
             calc_dict = calc.to_api_format()
+            calc_dict['id'] = calc.id
             result_list.append(calc_dict)
 
         logger.info(f"Retrieved {len(result_list)} calculation records from normalized schema")
@@ -224,9 +183,8 @@ def get_calculation_by_id(calculation_id: int) -> Optional[Dict[str, Any]]:
         if calculation is None:
             return None
 
-        # Use to_api_format to get backward-compatible format with results array
         result = calculation.to_api_format()
-        result['id'] = calculation.id  # Add ID to result
+        result['id'] = calculation.id
 
         return result
 
@@ -278,7 +236,7 @@ def insert_voting_submissions(submissions: List[Dict[str, Any]]) -> List[int]:
             )
 
             db.add(new_submission)
-            db.flush()  # Get the submission ID
+            db.flush()
             submission_ids.append(new_submission.id)
 
         db.commit()
@@ -336,7 +294,6 @@ def get_aggregated_votes() -> Dict[str, int]:
     db = SessionLocal()
 
     try:
-        # Use SQLAlchemy to join with Party and group by party name, sum votes
         aggregated = (
             db.query(
                 Party.name,
@@ -347,7 +304,6 @@ def get_aggregated_votes() -> Dict[str, int]:
             .all()
         )
 
-        # Convert to dictionary
         result = {party_name: int(total_votes) for party_name, total_votes in aggregated}
 
         logger.info(f"Aggregated votes for {len(result)} parties from database")
