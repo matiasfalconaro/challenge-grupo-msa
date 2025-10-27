@@ -1,0 +1,175 @@
+---
+import type { AggregatedVotesResponse } from '../types/dhondt';
+
+interface Props {
+  isActive: boolean;
+  aggregatedVotes: AggregatedVotesResponse | null;
+}
+
+const { isActive, aggregatedVotes } = Astro.props;
+
+const hasData = aggregatedVotes && aggregatedVotes.total_submissions > 0;
+---
+
+<div class={`tab-panel ${isActive ? 'active' : ''}`} data-panel="clear">
+  <div class="section danger-section">
+    <h3>Paso 4: Reiniciar Sistema</h3>
+    <p>Elimina TODAS las sumisiones de votos de la base de datos para empezar de nuevo.</p>
+
+    {hasData ? (
+      <>
+        <div class="warning-box">
+          <p><strong>⚠️ Advertencia:</strong></p>
+          <p>Esta acción eliminará permanentemente:</p>
+          <ul>
+            <li>{aggregatedVotes.total_submissions} sumisión(es) de votos</li>
+            <li>{aggregatedVotes.total_votes.toLocaleString()} votos totales</li>
+            <li>Datos de {aggregatedVotes.aggregated_parties.length} partido(s)</li>
+          </ul>
+        </div>
+
+        <form method="POST" onsubmit="return confirm('¿Está seguro de que desea eliminar todas las sumisiones?');">
+          <input type="hidden" name="action" value="clear-submissions" />
+          <button type="submit" class="danger-button half-width">Eliminar Todas las Sumisiones</button>
+        </form>
+      </>
+    ) : (
+      <div class="empty-state">
+        <p>✅ No hay datos para eliminar.</p>
+        <p>El sistema está vacío y listo para recibir nuevos datos.</p>
+      </div>
+    )}
+  </div>
+</div>
+
+<style>
+  .tab-panel {
+    display: none;
+    padding: 30px;
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .tab-panel.active {
+    display: block;
+  }
+
+  .section {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+  }
+
+  .section h3 {
+    color: #667eea;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.5rem;
+  }
+
+  .section p {
+    color: #666;
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+
+  .danger-section {
+    background: #fff5f5;
+    border: 2px solid #dc3545;
+  }
+
+  .danger-section h3 {
+    color: #dc3545;
+  }
+
+  .warning-box {
+    background: white;
+    border: 2px solid #ffc107;
+    border-radius: 5px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .warning-box p {
+    margin: 10px 0;
+  }
+
+  .warning-box ul {
+    margin: 10px 0;
+    padding-left: 25px;
+  }
+
+  .warning-box li {
+    margin: 5px 0;
+    color: #856404;
+  }
+
+  .danger-button {
+    background-color: #dc3545;
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: background-color 0.2s, transform 0.2s;
+    width: 100%;
+  }
+
+  .danger-button:hover {
+    background-color: #c82333;
+    transform: translateY(-2px);
+  }
+
+  .danger-button:active {
+    transform: translateY(0);
+  }
+
+  .half-width {
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6c757d;
+  }
+
+  .empty-state p {
+    font-size: 1.1rem;
+    margin: 10px 0;
+  }
+
+  .empty-state p:first-child {
+    font-size: 1.3rem;
+    font-weight: 600;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .tab-panel {
+      padding: 20px 15px;
+    }
+
+    .section {
+      padding: 15px;
+    }
+
+    .half-width {
+      width: 100%;
+    }
+  }
+</style>

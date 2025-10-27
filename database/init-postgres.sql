@@ -60,8 +60,6 @@ CREATE INDEX IF NOT EXISTS idx_calculation_results_calc_party ON calculation_res
 CREATE INDEX IF NOT EXISTS idx_calculation_results_seats ON calculation_results (seats);
 
 
--- HELPER FUNCTIONS
--- Function to automatically update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -70,13 +68,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger to automatically update parties.updated_at
 CREATE TRIGGER update_parties_updated_at
     BEFORE UPDATE ON parties
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
--- SEED PREDEFINED PARTIES
 INSERT INTO parties (name) VALUES
     ('Lista A'),
     ('Lista B'),

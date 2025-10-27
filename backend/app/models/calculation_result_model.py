@@ -60,7 +60,6 @@ class CalculationResult(Base):
         back_populates="calculation_results"
     )
 
-    # Table-level constraints and indexes
     __table_args__ = (
         CheckConstraint('votes >= 0', name='calculation_results_votes_check'),
         CheckConstraint('seats >= 0', name='calculation_results_seats_check'),
@@ -96,7 +95,8 @@ class CalculationResult(Base):
 
     def to_api_format(self) -> dict:
         """
-        Convert to API format (backward compatible with old JSONB format).
+        Convert normalized result to flat API format.
+        Returns a simple dictionary with party name, votes, and seats.
         """
         return {
             'name': self.party.name if self.party else 'Unknown',

@@ -1,6 +1,6 @@
 from fastapi import (APIRouter,
                      Request)
-from app.models.casting import HealthResponse
+from app.models.schemas import HealthResponse
 from app.core.rate_limit import (limiter,
                                  get_rate_limit)
 

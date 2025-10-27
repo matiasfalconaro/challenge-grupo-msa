@@ -1,33 +1,33 @@
-from .postgresql import (
-    init_connection_pool,
-    get_connection_pool,
-    insert_calculation,
-    get_calculation_history,
-    test_connection,
-    close_connection_pool,
-    get_database_stats,
-    get_calculation_by_id,
-    insert_voting_submissions,
-    get_all_voting_submissions,
-    get_aggregated_votes,
-    get_voting_submissions_count,
-    clear_all_voting_submissions
-)
-from .session import init_db
+from .repository import (insert_calculation,
+                        get_calculation_history,
+                        get_database_stats,
+                        get_calculation_by_id,
+                        insert_voting_submissions,
+                        get_all_voting_submissions,
+                        get_aggregated_votes,
+                        get_voting_submissions_count,
+                        clear_all_voting_submissions)
+from .session import (init_db,
+                     get_engine,
+                     get_session_factory,
+                     dispose_engine,
+                     test_connection,
+                     get_db)
+from .raw_query_executor import RawQueryExecutor
 
-__all__ = [
-    "init_connection_pool",
-    "get_connection_pool",
-    "insert_calculation",
-    "get_calculation_history",
-    "test_connection",
-    "close_connection_pool",
-    "get_database_stats",
-    "get_calculation_by_id",
-    "init_db",
-    "insert_voting_submissions",
-    "get_all_voting_submissions",
-    "get_aggregated_votes",
-    "get_voting_submissions_count",
-    "clear_all_voting_submissions"
-]
+__all__ = ["insert_calculation",
+          "get_calculation_history",
+          "get_database_stats",
+          "get_calculation_by_id",
+          "insert_voting_submissions",
+          "get_all_voting_submissions",
+          "get_aggregated_votes",
+          "get_voting_submissions_count",
+          "clear_all_voting_submissions",
+          "init_db",
+          "get_engine",
+          "get_session_factory",
+          "dispose_engine",
+          "test_connection",
+          "get_db",
+          "RawQueryExecutor"]
