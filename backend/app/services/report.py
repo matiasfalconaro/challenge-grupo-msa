@@ -18,7 +18,7 @@ class ReportService:
 
     def generate_comprehensive_report(self) -> BytesIO:
         """
-        Generate a comprehensive Excel report with multiple sheets.
+        Generate an Excel report with multiple sheets.
         """
         try:
             logger.info("Starting comprehensive report generation")
@@ -258,102 +258,43 @@ class ReportService:
         Get overall statistics summary.
         """
         sql = """
-            SELECT
-                'Total Calculations' as metric,
-                COUNT(*)::text as value
-            FROM calculations
-
-            UNION ALL
-
-            SELECT
-                'Total Parties' as metric,
-                COUNT(*)::text as value
-            FROM parties
-
-            UNION ALL
-
-            SELECT
-                'Total Voting Submissions' as metric,
-                COUNT(*)::text as value
-            FROM voting_submissions
-
-            UNION ALL
-
-            SELECT
-                'Total Votes Across All Calculations' as metric,
-                SUM(total_votes)::text as value
-            FROM calculations
-
-            UNION ALL
-
-            SELECT
-                'Total Seats Allocated' as metric,
-                SUM(total_seats)::text as value
-            FROM calculations
-
-            UNION ALL
-
-            SELECT
-                'Average Seats per Calculation' as metric,
-                ROUND(AVG(total_seats)::numeric, 2)::text as value
-            FROM calculations
-
-            UNION ALL
-
-            SELECT
-                'First Calculation Date' as metric,
-                MIN(timestamp)::text as value
-            FROM calculations
-
-            UNION ALL
-
-            SELECT
-                'Last Calculation Date' as metric,
-                MAX(timestamp)::text as value
-            FROM calculations
-
-            UNION ALL
-
-            SELECT
-                'Most Active Party (by votes)' as metric,
-                COALESCE(
-                    (SELECT p.name
-                     FROM parties p
-                     LEFT JOIN calculation_results cr ON p.id = cr.party_id
-                     GROUP BY p.id, p.name
-                     ORDER BY SUM(cr.votes) DESC NULLS LAST
-                     LIMIT 1),
-                    'N/A'
-                ) as value
-
-            UNION ALL
-
-            SELECT
-                'Most Successful Party (by seats)' as metric,
-                COALESCE(
-                    (SELECT p.name
-                     FROM parties p
-                     LEFT JOIN calculation_results cr ON p.id = cr.party_id
-                     GROUP BY p.id, p.name
-                     ORDER BY SUM(cr.seats) DESC NULLS LAST
-                     LIMIT 1),
-                    'N/A'
-                ) as value
+            WITH party_stats AS (
+                SELECT 
+                    p.id,
+                    p.name,
+                    SUM(COALESCE(cr.votes, 0)) as total_votes,
+                    SUM(COALESCE(cr.seats, 0)) as total_seats
+                FROM parties p
+                LEFT JOIN calculation_results cr ON p.id = cr.party_id
+                GROUP BY p.id, p.name
+            )
+            SELECT 
+                metric,
+                value
+            FROM (
+                SELECT 'Total Calculations' as metric, COUNT(*)::text as value FROM calculations
+                UNION ALL SELECT 'Total Parties', COUNT(*)::text FROM parties
+                UNION ALL SELECT 'Total Voting Submissions', COUNT(*)::text FROM voting_submissions
+                UNION ALL SELECT 'Total Votes Across All Calculations', SUM(total_votes)::text FROM calculations
+                UNION ALL SELECT 'Total Seats Allocated', SUM(total_seats)::text FROM calculations
+                UNION ALL SELECT 'Average Seats per Calculation', ROUND(AVG(total_seats)::numeric, 2)::text FROM calculations
+                UNION ALL SELECT 'First Calculation Date', MIN(timestamp)::text FROM calculations
+                UNION ALL SELECT 'Last Calculation Date', MAX(timestamp)::text FROM calculations
+                UNION ALL SELECT 'Most Active Party (by votes)', 
+                    COALESCE((SELECT name FROM party_stats ORDER BY total_votes DESC LIMIT 1), 'N/A')
+                UNION ALL SELECT 'Most Successful Party (by seats)', 
+                    COALESCE((SELECT name FROM party_stats ORDER BY total_seats DESC LIMIT 1), 'N/A')
+            ) stats
         """
 
         results = self.executor.execute_query(sql, return_format="dict")
-
-        if not results:
-            return pd.DataFrame(columns=['Metric', 'Value'])
-
-        df = pd.DataFrame(results)
-        df.columns = ['Metric', 'Value']
-
-        timestamp_row = pd.DataFrame({
-            'Metric': ['Report Generated At'],
-            'Value': [datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')]
-        })
-        df = pd.concat([timestamp_row, df], ignore_index=True)
+        
+        df = pd.DataFrame(results or [], columns=['Metric', 'Value'])
+        df = pd.concat([
+            pd.DataFrame([['Report Generated At', datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')]], 
+                        columns=['Metric', 'Value']),
+            df
+        ], ignore_index=True)
 
         return df
 
